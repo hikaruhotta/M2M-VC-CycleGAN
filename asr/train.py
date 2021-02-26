@@ -1,16 +1,6 @@
-from utils import IterMeter
-import os
-from comet_ml import Experiment
-import torch
-import torch.nn as nn
-import torch.utils.data as data
-import torch.optim as optim
 import torch.nn.functional as F
-import torchaudio
-import numpy as np
 
-
-def train(model, device, train_loader, criterion, optimizer, scheduler, epoch, iter_meter, experiment):
+def train(model, device, train_loader, criterion, optimizer, scheduler, epoch, iter_meter):
     model.train()
     data_len = len(train_loader.dataset)
     for batch_idx, _data in enumerate(train_loader):
@@ -26,8 +16,8 @@ def train(model, device, train_loader, criterion, optimizer, scheduler, epoch, i
         loss = criterion(output, labels, input_lengths, label_lengths)
         loss.backward()
 
-        experiment.log_metric('loss', loss.item(), step=iter_meter.get())
-        experiment.log_metric('learning_rate', scheduler.get_lr(), step=iter_meter.get())
+        # experiment.log_metric('loss', loss.item(), step=iter_meter.get())
+        # experiment.log_metric('learning_rate', scheduler.get_lr(), step=iter_meter.get())
 
         optimizer.step()
         scheduler.step()
