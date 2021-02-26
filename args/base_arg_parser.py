@@ -47,24 +47,6 @@ class BaseArgParser(object):
             '--seed', type=int, default=0, help='Random Seed.')
         self.parser.add_argument('--gpu_ids', type=str, default='0',
                                  help='Comma-separated list of GPU IDs.')
-       
-        # Model args
-        self.parser.add_argument(
-            '--n_cnn_layers', type=int, default=3, help='Numer of CNN layers.')
-        self.parser.add_argument(
-            '--n_rnn_layers', type=int, default=5, help='Number of RNN layers')
-        self.parser.add_argument(
-            '--rnn_dim', type=int, default=512, help='Dimensionality of RNN')
-        self.parser.add_argument(
-            '--n_class', type=int, default=29, help='Number of output classes.')
-        self.parser.add_argument(
-            '--n_feats', type=int, default=128, help='Number of features.')
-        self.parser.add_argument(
-            '--stride', type=int, default=2, help='Conv2d stride.')
-        self.parser.add_argument(
-            '--dropout', type=float, default=0.1, help='Dropout rate.')
-        self.parser.add_argument(
-            '--lr', type=float, default=5e-4, help='Learning rate.')
 
         # Logger Args
         self.parser.add_argument('--steps_per_print', type=int, default=100,
