@@ -38,13 +38,11 @@ def main(args, learning_rate=5e-4, batch_size=20, epochs=10, train_url="train-cl
     torch.manual_seed(7)
     device = torch.device("cuda" if use_cuda else "cpu")
 
-    if not os.path.isdir("./data"):
-        os.makedirs("./data")
+    if not os.path.isdir("/home/data"):
+        os.makedirs("/home/data")
 
-    train_dataset = torchaudio.datasets.LIBRISPEECH(
-        "./data", url=train_url, download=True)
-    test_dataset = torchaudio.datasets.LIBRISPEECH(
-        "./data", url=test_url, download=True)
+    train_dataset = torchaudio.datasets.LIBRISPEECH("/home/data", url=train_url, download=True)
+    test_dataset = torchaudio.datasets.LIBRISPEECH("/home/data", url=test_url, download=True)
 
     train_audio_transforms = get_audio_transforms('train')
     valid_audio_transforms = get_audio_transforms('valid')
