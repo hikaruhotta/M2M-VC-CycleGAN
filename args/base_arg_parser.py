@@ -34,39 +34,34 @@ class BaseArgParser(object):
         self.parser = argparse.ArgumentParser(description=' ')
         self.isTrain = True
 
-        self.parser.add_argument('--debug', default=False, action='store_true',
-                                 help=('Whether to run code deterministically.'))
         self.parser.add_argument(
             '--name', type=str, default='debug', help='Experiment name prefix.')
         self.parser.add_argument(
-            '--seed', type=int, default=0, help='Random Seed.')
-        self.parser.add_argument(
-            '--batch_size', type=int, default=1, help='Batch size.')
-        self.parser.add_argument('--gpu_ids', type=str, default='0,1',
-                                 help='Comma-separated list of GPU IDs.')
+            '--batch_size', type=int, default=20, help='Batch size.')
         self.parser.add_argument(
             '--num_workers', default=8, type=int, help='Number of threads for the DataLoader.')
-        self.parser.add_argument('--init_method', type=str, default='kaiming', choices=(
-            'kaiming', 'normal', 'xavier'), help='Initialization method to use for conv kernels and linear weights.')
         self.parser.add_argument(
-            '--data_dir', type=str, default='/data1/datasets/gutgan', help='Directory for data.')
+            '--data_dir', type=str, default='/home/data', help='Directory for data.')
         self.parser.add_argument(
-            '--save_dir', type=str, default='/data1/pix2pixHD', help='Directory for results \
-                including ckpts and viz (prefix).')
-        self.parser.add_argument('--maximize_metric', default=False, action="store_true",
-                                 help='For evaluation, higher the metric the better, else lower.')
+            '--save_dir', type=str, default='./', help='Directory for results including ckpts.')
 
-        # Data Args
-        self.parser.add_argument('--input_channels', type=int, default=3,
-                                 help='Number of input channels of the generator.')
-        self.parser.add_argument('--output_channels', type=int, default=3,
-                                 help='Number of output channels of the generator.')
-        self.parser.add_argument('--num_red_threshold', type=float, default=1000,
-                                 help='Filter patches with num red below this threshold.')
-        self.parser.add_argument("--synthetic_data_dir", type=str, default=None,
-                                 help='Directory holding synthetic images and csv file.')
-        self.parser.add_argument("--synthetic_data_proportion", type=float,
-                                 default=0, help='Proportion of training images which are synthetic.')
+        # Model args
+        self.parser.add_argument(
+            '--n_cnn_layers', type=int, default=3, help='Numer of CNN layers.')
+        self.parser.add_argument(
+            '--n_rnn_layers', type=int, default=5, help='Number of RNN layers')
+        self.parser.add_argument(
+            '--rnn_dim', type=int, default=512, help='Dimensionality of RNN')
+        self.parser.add_argument(
+            '--n_class', type=int, default=29, help='Number of output classes.')
+        self.parser.add_argument(
+            '--n_feats', type=int, default=128, help='Number of features.')
+        self.parser.add_argument(
+            '--stride', type=int, default=2, help='Conv2d stride.')
+        self.parser.add_argument(
+            '--dropout', type=float, default=0.1, help='Dropout rate.')
+        self.parser.add_argument(
+            '--lr', type=float, default=5e-4, help='Learning rate.')
 
         # Logger Args
         self.parser.add_argument('--steps_per_print', type=int, default=100,
