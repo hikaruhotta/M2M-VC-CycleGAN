@@ -9,7 +9,7 @@ from utils import GreedyDecoder
 from data import TextTransform, cer, wer
 
 
-def test(model, device, test_loader, criterion, epoch, iter_meter):
+def test(model, device, test_loader, criterion, epoch, iter_meter, logger):
     print('\nevaluating...')
     model.eval()
     test_loss = 0
