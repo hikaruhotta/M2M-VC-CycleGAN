@@ -1,3 +1,8 @@
+"""
+Main function of the asr pipeline.
+Adapted from https://colab.research.google.com/drive/1IPpwx4rX32rqHKpLz7dc8sOKspUa-YKO
+"""
+
 import os
 import torch
 import torch.nn as nn
@@ -11,8 +16,7 @@ from test import test
 from utils import IterMeter
 
 
-def main(learning_rate=5e-4, batch_size=20, epochs=10,
-        train_url="train-clean-100", test_url="test-clean"):
+def main(learning_rate=5e-4, batch_size=20, epochs=10, train_url="train-clean-100", test_url="test-clean"):
 
     hparams = {
         "n_cnn_layers": 3,
@@ -77,4 +81,9 @@ def main(learning_rate=5e-4, batch_size=20, epochs=10,
         test(model, device, test_loader, criterion, epoch, iter_meter)
 
 if __name__ == "__main__":
-    main()
+    learning_rate = 5e-4
+    batch_size = 10
+    epochs = 10
+    libri_train_set = "train-clean-100"
+    libri_test_set = "test-clean"
+    main(learning_rate, batch_size, epochs, libri_train_set, libri_test_set, experiment)
