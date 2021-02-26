@@ -71,7 +71,7 @@ def word_errors(reference, hypothesis, ignore_case=False, delimiter=' '):
     :return: Levenshtein distance and word number of reference sentence.
     :rtype: list
     """
-    if ignore_case == True:
+    if ignore_case is True:
         reference = reference.lower()
         hypothesis = hypothesis.lower()
 
@@ -96,12 +96,12 @@ def char_errors(reference, hypothesis, ignore_case=False, remove_space=False):
     :return: Levenshtein distance and length of reference sentence.
     :rtype: list
     """
-    if ignore_case == True:
+    if ignore_case is True:
         reference = reference.lower()
         hypothesis = hypothesis.lower()
 
     join_char = ' '
-    if remove_space == True:
+    if remove_space is True:
         join_char = ''
 
     reference = join_char.join(filter(None, reference.split(' ')))
