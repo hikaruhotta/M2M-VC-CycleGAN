@@ -5,18 +5,19 @@ Adapted from https://colab.research.google.com/drive/1IPpwx4rX32rqHKpLz7dc8sOKsp
 
 import torch.nn.functional as F
 
+
 def train(model, device, train_loader, criterion, optimizer, scheduler, epoch, iter_meter):
     model.train()
     data_len = len(train_loader.dataset)
     for batch_idx, _data in enumerate(train_loader):
-        spectrograms, labels, input_lengths, label_lengths = _data 
+        spectrograms, labels, input_lengths, label_lengths = _data
         spectrograms, labels = spectrograms.to(device), labels.to(device)
 
         optimizer.zero_grad()
 
         output = model(spectrograms)  # (batch, time, n_class)
         output = F.log_softmax(output, dim=2)
-        output = output.transpose(0, 1) # (time, batch, n_class)
+        output = output.transpose(0, 1)  # (time, batch, n_class)
 
         loss = criterion(output, labels, input_lengths, label_lengths)
         loss.backward()
