@@ -1,6 +1,7 @@
 import torch
 import torch.nn.functional as F
 from utils import GreedyDecoder
+from data import TextTransform
 
 def test(model, device, test_loader, criterion, epoch, iter_meter):
     print('\nevaluating...')
@@ -20,8 +21,9 @@ def test(model, device, test_loader, criterion, epoch, iter_meter):
             loss = criterion(output, labels, input_lengths, label_lengths)
             test_loss += loss.item() / len(test_loader)
 
+            text_transform = TextTransform()
             decoded_preds, decoded_targets = GreedyDecoder(
-                output.transpose(0, 1), labels, label_lengths)
+                output.transpose(0, 1), text_transform, labels, label_lengths)
             for j in range(len(decoded_preds)):
                 test_cer.append(cer(decoded_targets[j], decoded_preds[j]))
                 test_wer.append(wer(decoded_targets[j], decoded_preds[j]))
