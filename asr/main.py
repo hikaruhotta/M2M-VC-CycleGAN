@@ -1,4 +1,4 @@
-
+from data import TextTransform, get_audio_transforms, data_processing
 
 def main(learning_rate=5e-4, batch_size=20, epochs=10,
         train_url="train-clean-100", test_url="test-clean"):
@@ -28,16 +28,21 @@ def main(learning_rate=5e-4, batch_size=20, epochs=10,
     train_dataset = torchaudio.datasets.LIBRISPEECH("./data", url=train_url, download=True)
     test_dataset = torchaudio.datasets.LIBRISPEECH("./data", url=test_url, download=True)
 
+    train_audio_transforms = get_audio_transforms('train')
+    valid_audio_transforms = get_audio_transforms('valid')
+
+    text_transform = TextTransform()
+
     kwargs = {'num_workers': 1, 'pin_memory': True} if use_cuda else {}
     train_loader = data.DataLoader(dataset=train_dataset,
                                 batch_size=hparams['batch_size'],
                                 shuffle=True,
-                                collate_fn=lambda x: data_processing(x, 'train'),
+                                collate_fn=lambda x: data_processing(x, train_audio_transforms, text_transform),
                                 **kwargs)
     test_loader = data.DataLoader(dataset=test_dataset,
                                 batch_size=hparams['batch_size'],
                                 shuffle=False,
-                                collate_fn=lambda x: data_processing(x, 'valid'),
+                                collate_fn=lambda x: data_processing(x, valid_audio_transforms, text_transform),
                                 **kwargs)
 
     model = SpeechRecognitionModel(
