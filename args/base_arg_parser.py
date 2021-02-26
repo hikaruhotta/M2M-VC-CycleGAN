@@ -5,7 +5,6 @@ Base arguments for all scripts
 import argparse
 import json
 import os
-from datetime import datetime
 import torch
 import numpy as np
 import random
@@ -44,7 +43,11 @@ class BaseArgParser(object):
             '--data_dir', type=str, default='/home/data', help='Directory for data.')
         self.parser.add_argument(
             '--save_dir', type=str, default='./', help='Directory for results including ckpts.')
-
+        self.parser.add_argument(
+            '--seed', type=int, default=0, help='Random Seed.')
+        self.parser.add_argument('--gpu_ids', type=str, default='0',
+                                 help='Comma-separated list of GPU IDs.')
+       
         # Model args
         self.parser.add_argument(
             '--n_cnn_layers', type=int, default=3, help='Numer of CNN layers.')
@@ -101,16 +104,8 @@ class BaseArgParser(object):
         np.random.seed(args.seed)
         torch.backends.cudnn.deterministic = True
 
-        # Causes cuDNN to deterministically select an algorithm
-        # possibly at the cost of reduced performance
-        if args.debug:
-            torch.backends.cudnn.benchmark = False
-
         if hasattr(self, 'isTrain'):
             args.isTrain = self.isTrain   # train or test
-
-        if args.isTrain and not args.continue_train:
-            args.name = datetime.now().strftime('%y%m%d_%H%M%S') + '_' + args.name
 
         os.makedirs(os.path.join(args.save_dir, args.name),  exist_ok=True)
 
@@ -123,9 +118,6 @@ class BaseArgParser(object):
         # Create ckpt dir and viz dir
         args.ckpt_dir = os.path.join(args.save_dir, args.name, 'ckpts')
         os.makedirs(args.ckpt_dir, exist_ok=True)
-
-        args.viz_dir = os.path.join(args.save_dir, args.name, 'viz')
-        os.makedirs(args.viz_dir, exist_ok=True)
 
         # Set up available GPUs
         def args_to_list(csv, arg_type=int):
@@ -144,9 +136,6 @@ class BaseArgParser(object):
             args.device = 'cuda'
         else:
             args.device = 'cpu'
-
-        if hasattr(args, 'supervised_factors'):
-            args.supervised_factors = args_to_list(args.supervised_factors)
 
         # Ensure consistency of load_epoch and start_epoch arguments with each other and defaults.
         if not args.isTrain or args.continue_train:
