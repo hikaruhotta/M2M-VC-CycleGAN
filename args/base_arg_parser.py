@@ -66,13 +66,6 @@ class BaseArgParser(object):
         # Logger Args
         self.parser.add_argument('--steps_per_print', type=int, default=100,
                                  help='Number of steps between printing loss to the console and TensorBoard.')
-        self.parser.add_argument('--num_visuals', type=int, default=10,
-                                 help='Number of images to visualize.')
-        self.parser.add_argument('--steps_per_visual', type=int, default=200,
-                                 help='Number of steps between visualizing training examples.')
-
-        self.parser.add_argument(
-            '--max_eval', type=int, default=None, help='Max data points to evaluate on.')
         self.parser.add_argument(
             '--start_epoch', type=int, default=1, help='Epoch to start training')
         self.parser.add_argument('--load_epoch', type=int, default=0,
