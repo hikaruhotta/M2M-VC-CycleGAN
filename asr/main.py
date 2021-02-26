@@ -1,5 +1,4 @@
 import os
-from comet_ml import Experiment
 import torch
 import torch.nn as nn
 import torch.utils.data as data
