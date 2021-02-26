@@ -4,12 +4,8 @@ Inherits BaseLogger class.
 """
 
 from time import time
-
-import torchvision.transforms as transforms
-
-from utils.util import AverageMeter, unnormalize, greyscale_to_rgb_tensor, visualize
+from utils.util import AverageMeter
 from .base_logger import BaseLogger
-from constants import MEAN, STD
 
 
 class TrainLogger(BaseLogger):

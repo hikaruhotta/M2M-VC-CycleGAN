@@ -31,7 +31,7 @@ def train(args, model, train_loader, criterion, optimizer, scheduler, epoch, log
         logger.log_metrics({'learning_rate': scheduler.get_lr()})
 
         optimizer.step()
-        scheduler.step(
+        scheduler.step()
         if batch_idx % 100 == 0 or batch_idx == data_len:
             print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                 epoch, batch_idx * len(spectrograms), data_len,
