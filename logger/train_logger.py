@@ -122,7 +122,7 @@ class TrainLogger(BaseLogger):
                 message += '%s: %.3f ' % (loss_name, meter.avg)
 
             # Write all errors as scalars to the graph
-            self.log_scalars(
+            self._log_scalars(
                 {loss_name: meter.avg for loss_name, meter in self.loss_meters.items()}, print_to_stdout=False)
 
             for _, meter in self.loss_meters.items():
