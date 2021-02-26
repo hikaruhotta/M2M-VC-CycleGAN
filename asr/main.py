@@ -63,9 +63,9 @@ def main(args, train_url="train-clean-100", test_url="test-clean"):
     logger.log_hparams(args)
 
     iter_meter = IterMeter()
-    for epoch in range(1, args.num_epochs + 1):
-        train(model, args.device, train_loader, criterion,
-              optimizer, scheduler, epoch, iter_meter, logger)
+    for epoch in range(1, epochs + 1):
+        train(args, model, train_loader, criterion,
+              optimizer, scheduler, epoch, logger)
         test(model, args.device, test_loader, criterion, epoch, iter_meter, logger)
 
 

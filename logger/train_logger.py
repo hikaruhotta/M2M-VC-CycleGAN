@@ -20,18 +20,16 @@ class TrainLogger(BaseLogger):
         iter_start_time (time): Records the start time of each iteration
         epoch_start_time (time): Records the start time of each epoch
         steps_per_print (int): Number of iterations between metrics are logged and printed
-        steps_per_visual (int):  Number of iterations between visualizations are produced
         num_epochs (int): Total number of epochs to train
     Methods:
         log_hparams(args): Log all the hyper parameters in tensorboard
-        log_iter(img_dict={}, loss_dict={}): Log results from a training iteration
+        log_iter(loss_dict={}): Log results from a training iteration
         log_metrics(metrics): Log scalar metrics from training
         start_iter(): Log info for start of an iteration
         end_iter(): Log info for end of an iteration
         start_epoch(): Log info for start of an epoch
         end_epoch(metrics): Log info for end of an epoch. Save model parameters and update learning rate.
         is_finished_training(): Return True if finished training, otherwise return False.
-        visualize_outputs(img_dict): Visualize predictions and targets in TensorBoard.
     """
 
     def __init__(self, args, dataset_len):
@@ -59,11 +57,10 @@ class TrainLogger(BaseLogger):
 
         self._log_text(hparams)
 
-    def log_iter(self, img_dict={}, loss_dict={}):
+    def log_iter(self, loss_dict={}):
         """
         Log results from a training iteration.
         Args:
-            img_dict (dict): str to Tensor dictionary of images
             loss_dict (dict): str to scalar dictionary of losses
         """
         if not hasattr(self, 'loss_meters'):
