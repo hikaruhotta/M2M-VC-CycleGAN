@@ -17,7 +17,7 @@ from utils import IterMeter
 from logger.train_logger import TrainLogger
 
 
-def main(learning_rate=5e-4, batch_size=20, epochs=10, train_url="train-clean-100", test_url="test-clean"):
+def main(args, learning_rate=5e-4, batch_size=20, epochs=10, train_url="train-clean-100", test_url="test-clean"):
 
     hparams = {
         "n_cnn_layers": 3,
@@ -80,11 +80,14 @@ def main(learning_rate=5e-4, batch_size=20, epochs=10, train_url="train-clean-10
                                               epochs=hparams['epochs'],
                                               anneal_strategy='linear')
 
+    logger = TrainLogger(args, len(train_loader.dataset))
+    logger.log_hparams(args)
+
     iter_meter = IterMeter()
     for epoch in range(1, epochs + 1):
         train(model, device, train_loader, criterion,
-              optimizer, scheduler, epoch, iter_meter)
-        test(model, device, test_loader, criterion, epoch, iter_meter)
+              optimizer, scheduler, epoch, iter_meter, logger)
+        test(model, device, test_loader, criterion, epoch, iter_meter, logger)
 
 
 if __name__ == "__main__":
@@ -93,4 +96,4 @@ if __name__ == "__main__":
     epochs = 10
     libri_train_set = "train-clean-100"
     libri_test_set = "test-clean"
-    main(learning_rate, batch_size, epochs, libri_train_set, libri_test_set)
+    main(args, learning_rate, batch_size, epochs, libri_train_set, libri_test_set)

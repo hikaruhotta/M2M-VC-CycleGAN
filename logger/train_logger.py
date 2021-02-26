@@ -44,7 +44,6 @@ class TrainLogger(BaseLogger):
         self.iter_start_time = None
         self.epoch_start_time = None
         self.steps_per_print = args.steps_per_print
-        self.steps_per_visual = args.steps_per_visual
         self.num_epochs = args.num_epochs
 
     def log_hparams(self, args):
@@ -92,10 +91,6 @@ class TrainLogger(BaseLogger):
             # write to .log file
             self.write(message)
 
-        # Periodically visualize up to num_visuals training examples from the batch
-        if self.iter % self.steps_per_visual == 0 and len(img_dict) > 0:
-            self.visualize_outputs(img_dict)
-
     def log_metrics(self, metrics):
         """
         Logs scalar metrics from training.
@@ -134,24 +129,3 @@ class TrainLogger(BaseLogger):
     def is_finished_training(self):
         """Return True if finished training, otherwise return False."""
         return 0 < self.num_epochs < self.epoch
-
-    def visualize_outputs(self, img_dict):
-        """
-        Visualize predictions and targets in TensorBoard in grid form.
-        Args:
-            img_dict (dict): str to Tensor dictionary of images
-        Returns:
-            int: Number of examples visualized to TensorBoard.
-        """
-        imgs = []
-        names = '-'.join(list(img_dict.keys()))
-        for name, img in img_dict.items():
-            if 'mask' in name:
-                imgs.append(greyscale_to_rgb_tensor(img[0]))
-            else:
-                imgs.append(unnormalize(img[0], MEAN, STD))
-
-        self.summary_writer.add_image(
-            names, visualize(imgs), self.global_step)
-
-        return len(img_dict)
