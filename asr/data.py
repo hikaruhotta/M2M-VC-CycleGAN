@@ -93,7 +93,7 @@ def data_processing(data, audio_transforms, text_transform):
         spectrograms.append(spec)
         label = torch.Tensor(text_transform.text_to_int(utterance.lower()))
         labels.append(label)
-        input_lengths.append(spec.shape[0]//2)
+        input_lengths.append(spec.shape[0] // 2)
         label_lengths.append(len(label))
 
     spectrograms = nn.utils.rnn.pad_sequence(
