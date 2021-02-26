@@ -38,7 +38,7 @@ class BaseArgParser(object):
         self.parser.add_argument(
             '--batch_size', type=int, default=20, help='Batch size.')
         self.parser.add_argument(
-            '--num_workers', default=8, type=int, help='Number of threads for the DataLoader.')
+            '--num_workers', default=1, type=int, help='Number of threads for the DataLoader.')
         self.parser.add_argument(
             '--data_dir', type=str, default='/home/data/', help='Directory for data.')
         self.parser.add_argument(
@@ -49,7 +49,7 @@ class BaseArgParser(object):
                                  help='Comma-separated list of GPU IDs.')
 
         # Logger Args
-        self.parser.add_argument('--steps_per_print', type=int, default=100,
+        self.parser.add_argument('--steps_per_print', type=int, default=1000,
                                  help='Number of steps between printing loss to the console and TensorBoard.')
         self.parser.add_argument(
             '--start_epoch', type=int, default=1, help='Epoch to start training')
