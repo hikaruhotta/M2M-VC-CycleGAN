@@ -15,7 +15,7 @@ from asr.train import train
 from asr.test import test
 from asr.utils import IterMeter
 from logger.train_logger import TrainLogger
-from args import ASRTrainArgParser
+from args.asr_train_arg_parser import ASRTrainArgParser
 
 
 def main(args, train_url="train-clean-100", test_url="test-clean"):
@@ -47,7 +47,7 @@ def main(args, train_url="train-clean-100", test_url="test-clean"):
         args.n_class, args.n_feats, args.stride, args.dropout
     ).to(args.device)
 
-    print(model)
+    # print(model)
     print('Num Model Parameters', sum(
         [param.nelement() for param in model.parameters()]))
 
@@ -63,7 +63,7 @@ def main(args, train_url="train-clean-100", test_url="test-clean"):
     logger.log_hparams(args)
 
     iter_meter = IterMeter()
-    for epoch in range(1, epochs + 1):
+    for epoch in range(1, args.num_epochs + 1):
         train(args, model, train_loader, criterion,
               optimizer, scheduler, epoch, logger)
         test(model, args.device, test_loader, criterion, epoch, iter_meter, logger)

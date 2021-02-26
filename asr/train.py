@@ -12,7 +12,7 @@ def train(args, model, train_loader, criterion, optimizer, scheduler, epoch, log
     model.train()
     data_len = len(train_loader.dataset)
     logger.start_epoch()
-    for batch_idx, _data in tqdm(enumerate(train_loader)):
+    for batch_idx, _data in enumerate(tqdm(train_loader)):
         logger.start_iter()
 
         spectrograms, labels, input_lengths, label_lengths = _data
@@ -28,14 +28,13 @@ def train(args, model, train_loader, criterion, optimizer, scheduler, epoch, log
         loss.backward()
 
         logger.log_iter(loss_dict={'train_loss': loss.item()})
-        logger.log_metrics({'learning_rate': scheduler.get_lr()})
 
         optimizer.step()
         scheduler.step()
-        if batch_idx % 100 == 0 or batch_idx == data_len:
-            print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
-                epoch, batch_idx * len(spectrograms), data_len,
-                100. * batch_idx / len(train_loader), loss.item()))
+        # if batch_idx % 100 == 0 or batch_idx == data_len:
+        #     print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
+        #         epoch, batch_idx * len(spectrograms), data_len,
+        #         100. * batch_idx / len(train_loader), loss.item()))
 
         logger.end_iter()
 
