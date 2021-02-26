@@ -3,6 +3,7 @@ Test function of the asr pipeline.
 Adapted from https://colab.research.google.com/drive/1IPpwx4rX32rqHKpLz7dc8sOKspUa-YKO
 """
 
+from tqdm import tqdm
 import torch
 import torch.nn.functional as F
 from utils import GreedyDecoder
@@ -15,7 +16,7 @@ def test(model, device, test_loader, criterion, epoch, iter_meter, logger):
     test_loss = 0
     test_cer, test_wer = [], []
     with torch.no_grad():
-        for i, _data in enumerate(test_loader):
+        for i, _data in tqdm(enumerate(test_loader)):
             spectrograms, labels, input_lengths, label_lengths = _data
             spectrograms, labels = spectrograms.to(
                 device), labels.to(device)
@@ -33,3 +34,8 @@ def test(model, device, test_loader, criterion, epoch, iter_meter, logger):
             for j in range(len(decoded_preds)):
                 test_cer.append(cer(decoded_targets[j], decoded_preds[j]))
                 test_wer.append(wer(decoded_targets[j], decoded_preds[j]))
+
+    avg_cer = sum(test_cer) / len(test_cer)
+    avg_wer = sum(test_wer) / len(test_wer)
+    logger.log_metrics({'test_loss': test_loss, 'test_cer': avg_cer, 'test_wer': avg_wer})
+    print('Test set: Average loss: {:.4f}, Average CER: {:4f} Average WER: {:.4f}\n'.format(test_loss, avg_cer, avg_wer))

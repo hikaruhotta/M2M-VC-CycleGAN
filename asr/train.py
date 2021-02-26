@@ -4,15 +4,16 @@ Adapted from https://colab.research.google.com/drive/1IPpwx4rX32rqHKpLz7dc8sOKsp
 """
 
 import torch.nn.functional as F
+from tqdm import tqdm
 
 
 def train(model, device, train_loader, criterion, optimizer, scheduler, epoch, iter_meter, logger):
     model.train()
     data_len = len(train_loader.dataset)
     logger.start_epoch()
-    for batch_idx, _data in enumerate(train_loader):
+    for batch_idx, _data in tqdm(enumerate(train_loader)):
         logger.start_iter()
-        
+
         spectrograms, labels, input_lengths, label_lengths = _data
         spectrograms, labels = spectrograms.to(device), labels.to(device)
 
