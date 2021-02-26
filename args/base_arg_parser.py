@@ -40,9 +40,9 @@ class BaseArgParser(object):
         self.parser.add_argument(
             '--num_workers', default=8, type=int, help='Number of threads for the DataLoader.')
         self.parser.add_argument(
-            '--data_dir', type=str, default='/home/data', help='Directory for data.')
+            '--data_dir', type=str, default='/home/data/', help='Directory for data.')
         self.parser.add_argument(
-            '--save_dir', type=str, default='./', help='Directory for results including ckpts.')
+            '--save_dir', type=str, default='/home/results/', help='Directory for results including ckpts.')
         self.parser.add_argument(
             '--seed', type=int, default=0, help='Random Seed.')
         self.parser.add_argument('--gpu_ids', type=str, default='0',
