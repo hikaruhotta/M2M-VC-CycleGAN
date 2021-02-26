@@ -8,7 +8,7 @@ from tqdm import tqdm
 from asr.utils import save_ckpt
 
 
-def train(args, model, train_loader, criterion, optimizer, scheduler, epoch, logger):
+def train(args, model, train_loader, criterion, optimizer, scheduler, logger):
     model.train()
     data_len = len(train_loader.dataset)
     logger.start_epoch()

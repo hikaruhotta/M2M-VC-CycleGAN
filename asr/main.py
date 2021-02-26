@@ -19,8 +19,10 @@ from args.asr_train_arg_parser import ASRTrainArgParser
 
 
 def main(args, train_url="train-clean-100", test_url="test-clean"):
-    train_dataset = torchaudio.datasets.LIBRISPEECH(args.data_dir, url=train_url, download=True)
-    test_dataset = torchaudio.datasets.LIBRISPEECH(args.data_dir, url=test_url, download=True)
+    train_dataset = torchaudio.datasets.LIBRISPEECH(
+        args.data_dir, url=train_url, download=True)
+    test_dataset = torchaudio.datasets.LIBRISPEECH(
+        args.data_dir, url=test_url, download=True)
 
     train_audio_transforms = get_audio_transforms('train')
     valid_audio_transforms = get_audio_transforms('valid')
@@ -64,9 +66,8 @@ def main(args, train_url="train-clean-100", test_url="test-clean"):
 
     iter_meter = IterMeter()
     for epoch in range(1, args.num_epochs + 1):
-        train(args, model, train_loader, criterion,
-              optimizer, scheduler, epoch, logger)
-        test(model, args.device, test_loader, criterion, epoch, iter_meter, logger)
+        train(args, model, train_loader, criterion, optimizer, scheduler, logger)
+        test(args, model, test_loader, criterion, logger)
 
 
 if __name__ == "__main__":

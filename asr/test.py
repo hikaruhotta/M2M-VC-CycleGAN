@@ -11,7 +11,7 @@ from asr.data import TextTransform
 from asr.metrics import cer, wer
 
 
-def test(model, device, test_loader, criterion, epoch, iter_meter, logger):
+def test(args, model, test_loader, criterion, logger):
     print('\nevaluating...')
     model.eval()
     test_loss = 0
@@ -19,8 +19,7 @@ def test(model, device, test_loader, criterion, epoch, iter_meter, logger):
     with torch.no_grad():
         for i, _data in tqdm(enumerate(test_loader)):
             spectrograms, labels, input_lengths, label_lengths = _data
-            spectrograms, labels = spectrograms.to(
-                device), labels.to(device)
+            spectrograms, labels = spectrograms.to(args.device), labels.to(args.device)
 
             output = model(spectrograms)  # (batch, time, n_class)
             output = F.log_softmax(output, dim=2)

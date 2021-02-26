@@ -82,7 +82,7 @@ class BaseArgParser(object):
         if hasattr(self, 'isTrain'):
             args.isTrain = self.isTrain   # train or test
 
-        os.makedirs(os.path.join(args.save_dir, args.name),  exist_ok=True)
+        os.makedirs(os.path.join(args.save_dir, args.name), exist_ok=True)
 
         # Save args to a JSON file
         prefix = 'train' if args.isTrain else 'test'
