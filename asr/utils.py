@@ -6,6 +6,7 @@ Adapted from https://colab.research.google.com/drive/1IPpwx4rX32rqHKpLz7dc8sOKsp
 import torch
 import os
 
+
 class IterMeter(object):
     """keeps track of total iterations"""
 
