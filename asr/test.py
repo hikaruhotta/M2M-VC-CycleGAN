@@ -6,7 +6,6 @@ def test(model, device, test_loader, criterion, epoch, iter_meter):
     model.eval()
     test_loss = 0
     test_cer, test_wer = [], []
-    # with experiment.test():
     with torch.no_grad():
         for i, _data in enumerate(test_loader):
             spectrograms, labels, input_lengths, label_lengths = _data
