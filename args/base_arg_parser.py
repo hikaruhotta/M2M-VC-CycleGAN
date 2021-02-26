@@ -34,7 +34,7 @@ class BaseArgParser(object):
         self.isTrain = True
 
         self.parser.add_argument(
-            '--name', type=str, default='debug', help='Experiment name prefix.')
+            '--name', type=str, default='librispeech_vanilla', help='Experiment name prefix.')
         self.parser.add_argument(
             '--batch_size', type=int, default=20, help='Batch size.')
         self.parser.add_argument(
