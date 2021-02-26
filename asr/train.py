@@ -31,10 +31,6 @@ def train(args, model, train_loader, criterion, optimizer, scheduler, logger):
 
         optimizer.step()
         scheduler.step()
-        # if batch_idx % 100 == 0 or batch_idx == data_len:
-        #     print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
-        #         epoch, batch_idx * len(spectrograms), data_len,
-        #         100. * batch_idx / len(train_loader), loss.item()))
 
         logger.end_iter()
 
