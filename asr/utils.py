@@ -1,3 +1,8 @@
+"""
+Utils of the asr pipeline.
+Adapted from https://colab.research.google.com/drive/1IPpwx4rX32rqHKpLz7dc8sOKspUa-YKO
+"""
+
 import torch
 
 class IterMeter(object):
