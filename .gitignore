@@ -1,1 +1,15 @@
-.vscode
+results/
+logs/
+__pycache__/*
+*.pyc
+*.pth
+*.pt
+*.swp
+*.idea
+*.vscode
+events.out.tfevents.*
+*.gif
+*.tar
+*.ipynb
+*.ipynb_checkpoints
+*.out
