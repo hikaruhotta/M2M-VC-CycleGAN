@@ -11,7 +11,7 @@ import torch.optim as optim
 import torchaudio
 from asr.data import TextTransform, get_audio_transforms, data_processing
 from asr.models import SpeechRecognitionModel
-from train import train
+from asr.train import train
 from asr.test import test
 from asr.utils import IterMeter
 from logger.train_logger import TrainLogger

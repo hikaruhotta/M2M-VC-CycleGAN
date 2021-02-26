@@ -7,7 +7,8 @@ from tqdm import tqdm
 import torch
 import torch.nn.functional as F
 from asr.utils import GreedyDecoder
-from asr.data import TextTransform, cer, wer
+from asr.data import TextTransform
+from asr.metrics import cer, wer
 
 
 def test(model, device, test_loader, criterion, epoch, iter_meter, logger):
