@@ -4,8 +4,55 @@ Inherits BaseLogger class.
 """
 
 from time import time
-from utils.util import AverageMeter
-from .base_logger import BaseLogger
+from logger.base_logger import BaseLogger
+
+
+class AverageMeter(object):
+    """
+    Class which computes and stores the average and current value.
+    Adapted from: https://github.com/pytorch/examples/blob/master/imagenet/main.py
+    Attributes
+    ----------
+    avg : float
+        Average value
+    val : float
+        Current value
+    sum : float
+        Sum of values
+    count : float
+        Number of values
+    Methods
+    -------
+    reset():
+        Reinitializes the class object
+    update(val, n):
+        Updates attributes with new value
+    """
+
+    def __init__(self):
+        self.avg = 0
+        self.val = 0
+        self.sum = 0
+        self.count = 0
+
+    def reset(self):
+        """Reinitializes the class object."""
+        self.__init__()
+
+    def update(self, val, n=1):
+        """
+        Updates attributes with new value.
+        Parameters
+        ----------
+        val : float
+            New value
+        n : int
+            Number of values to update
+        """
+        self.val = val
+        self.sum += val * n
+        self.count += n
+        self.avg = self.sum / self.count
 
 
 class TrainLogger(BaseLogger):
