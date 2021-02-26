@@ -1,4 +1,18 @@
+import os
+from comet_ml import Experiment
+import torch
+import torch.nn as nn
+import torch.utils.data as data
+import torch.optim as optim
+import torch.nn.functional as F
+import torchaudio
+import numpy as np
 from data import TextTransform, get_audio_transforms, data_processing
+from models import SpeechRecognitionModel
+from train import train
+from test import test
+from utils import IterMeter
+
 
 def main(learning_rate=5e-4, batch_size=20, epochs=10,
         train_url="train-clean-100", test_url="test-clean"):
