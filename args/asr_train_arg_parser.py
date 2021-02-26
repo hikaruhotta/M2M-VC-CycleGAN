@@ -13,7 +13,7 @@ class ASRTrainArgParser(BaseArgParser):
     """
 
     def __init__(self):
-        super(TrainArgParser, self).__init__()
+        super(ASRTrainArgParser, self).__init__()
         self.isTrain = True
 
         self.parser.add_argument('--num_epochs', type=int, default=20, help='Number of epochs to train.')
