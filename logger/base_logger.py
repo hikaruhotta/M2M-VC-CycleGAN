@@ -43,11 +43,13 @@ class BaseLogger(object):
         self.batch_size = args.batch_size
         self.dataset_len = dataset_len
         self.save_dir = args.save_dir
-        
+
         # log_dir, is the directory for tensorboard logs: hpylori/logs/
-        log_dir = os.path.join(args.save_dir, 'logs', args.name + '_' + datetime.now().strftime('%y%m%d_%H%M%S'))
+        log_dir = os.path.join(
+            args.save_dir, 'logs', args.name + '_' + datetime.now().strftime('%y%m%d_%H%M%S'))
         self.summary_writer = SummaryWriter(log_dir=log_dir)
-        self.log_path = os.path.join(self.save_dir, args.name, '{}.log'.format(args.name))
+        self.log_path = os.path.join(
+            self.save_dir, args.name, '{}.log'.format(args.name))
         self.epoch = args.start_epoch
         self.iter = 0
         self.global_step = round_down(

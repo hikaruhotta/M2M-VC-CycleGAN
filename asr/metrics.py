@@ -3,11 +3,8 @@ Defines the metric functions of the asr pipeline.
 Adapted from https://colab.research.google.com/drive/1IPpwx4rX32rqHKpLz7dc8sOKspUa-YKO
 """
 
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import torchaudio
 import numpy as np
+
 
 def avg_wer(wer_scores, combined_ref_len):
     return float(sum(wer_scores)) / float(combined_ref_len)
@@ -40,7 +37,7 @@ def _levenshtein_distance(ref, hyp):
     distance = np.zeros((2, n + 1), dtype=np.int32)
 
     # initialize distance matrix
-    for j in range(0,n + 1):
+    for j in range(0, n + 1):
         distance[0][j] = j
 
     # calculate levenshtein distance
