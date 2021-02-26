@@ -34,8 +34,4 @@ def train(args, model, train_loader, criterion, optimizer, scheduler, logger):
 
         logger.end_iter()
 
-    if logger.epoch % args.epochs_per_save == 0:
-        save_ckpt(logger.epoch, model, "SpeechRecognitionModel",
-                  optimizer, scheduler, args.ckpt_dir, args.device)
-
     logger.end_epoch()

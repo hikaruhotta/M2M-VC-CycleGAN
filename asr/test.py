@@ -37,5 +37,8 @@ def test(args, model, test_loader, criterion, logger):
 
     avg_cer = sum(test_cer) / len(test_cer)
     avg_wer = sum(test_wer) / len(test_wer)
-    logger.log_metrics({'test_loss': test_loss, 'test_cer': avg_cer, 'test_wer': avg_wer})
+    metric_dict = {'test_loss': test_loss, 'test_cer': avg_cer, 'test_wer': avg_wer}
+    logger.log_metrics(metric_dict)
     print('Test set: Average loss: {:.4f}, Average CER: {:4f} Average WER: {:.4f}\n'.format(test_loss, avg_cer, avg_wer))
+
+    return metric_dict
