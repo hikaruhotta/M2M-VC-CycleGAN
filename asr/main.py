@@ -16,6 +16,7 @@ from asr.test import test
 from asr.utils import IterMeter
 from logger.train_logger import TrainLogger
 from args.asr_train_arg_parser import ASRTrainArgParser
+from saver.model_saver import ModelSaver
 
 
 def main(args, train_url="train-clean-100", test_url="test-clean"):
@@ -49,7 +50,6 @@ def main(args, train_url="train-clean-100", test_url="test-clean"):
         args.n_class, args.n_feats, args.stride, args.dropout
     ).to(args.device)
 
-    # print(model)
     print('Num Model Parameters', sum(
         [param.nelement() for param in model.parameters()]))
 
@@ -61,13 +61,22 @@ def main(args, train_url="train-clean-100", test_url="test-clean"):
                                               epochs=args.num_epochs,
                                               anneal_strategy='linear')
 
+    saver = ModelSaver(args, max_ckpts=args.max_ckpts, metric_name="test_wer", maximize_metric=False)
+
+    if args.continue_train:
+        saver.load_model(model, "SpeechRecognitionModel", args.ckpt_path, optimizer, scheduler)
+
     logger = TrainLogger(args, len(train_loader.dataset))
     logger.log_hparams(args)
 
     iter_meter = IterMeter()
     for epoch in range(1, args.num_epochs + 1):
-        train(args, model, train_loader, criterion, optimizer, scheduler, logger)
-        test(args, model, test_loader, criterion, logger)
+        train(args, model, train_loader, criterion,
+              optimizer, scheduler, logger)
+        metric_dict = test(args, model, test_loader, criterion, logger)
+        if logger.epoch % args.epochs_per_save == 0:
+            saver.save(logger.epoch, model, optimizer, scheduler, args.device,
+                       "SpeechRecognitionModel", metric_dict["test_wer"])
 
 
 if __name__ == "__main__":
