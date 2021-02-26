@@ -37,6 +37,6 @@ class ASRTrainArgParser(BaseArgParser):
             '--stride', type=int, default=2, help='Conv2D kernel stride.')
 
         self.parser.add_argument('--max_ckpts', type=int, default=3, help='Max ckpts to save.')
-        self.parser.add_argument('--epochs_per_save', type=int, default=10,
+        self.parser.add_argument('--epochs_per_save', type=int, default=1,
                                  help='Number of epochs between saving a checkpoint to save_dir.')
         self.parser.add_argument('--continue_train', action='store_true', help='continue training: load the latest model')
