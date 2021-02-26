@@ -1,5 +1,6 @@
 import torch
 import torch.nn.functional as F
+from utils import GreedyDecoder
 
 def test(model, device, test_loader, criterion, epoch, iter_meter):
     print('\nevaluating...')
