@@ -33,6 +33,7 @@ def train(args, model, train_loader, criterion, optimizer, scheduler, logger):
         scheduler.step()
 
         logger.end_iter()
+        break
 
     if logger.epoch % args.epochs_per_save == 0:
         save_ckpt(logger.epoch, model, "SpeechRecognitionModel",
