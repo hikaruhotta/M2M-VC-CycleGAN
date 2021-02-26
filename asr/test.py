@@ -6,7 +6,8 @@ Adapted from https://colab.research.google.com/drive/1IPpwx4rX32rqHKpLz7dc8sOKsp
 import torch
 import torch.nn.functional as F
 from utils import GreedyDecoder
-from data import TextTransform
+from data import TextTransform, cer, wer
+
 
 def test(model, device, test_loader, criterion, epoch, iter_meter):
     print('\nevaluating...')

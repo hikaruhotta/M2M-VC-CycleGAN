@@ -7,8 +7,10 @@ import torch
 import torch.nn as nn
 import torchaudio
 
+
 class TextTransform:
     """Maps characters to integers and vice versa"""
+
     def __init__(self):
         char_map_str = """
         ' 0
@@ -66,17 +68,20 @@ class TextTransform:
             string.append(self.index_map[i])
         return ''.join(string).replace('<SPACE>', ' ')
 
+
 def get_audio_transforms(phase):
     if phase == 'train':
         transforms = nn.Sequential(
-            torchaudio.transforms.MelSpectrogram(sample_rate=16000, n_mels=128),
+            torchaudio.transforms.MelSpectrogram(
+                sample_rate=16000, n_mels=128),
             torchaudio.transforms.FrequencyMasking(freq_mask_param=30),
             torchaudio.transforms.TimeMasking(time_mask_param=100)
         )
     elif phase == 'valid':
         transforms = torchaudio.transforms.MelSpectrogram()
-    
+
     return transforms
+
 
 def data_processing(data, audio_transforms, text_transform):
     spectrograms = []
@@ -91,7 +96,8 @@ def data_processing(data, audio_transforms, text_transform):
         input_lengths.append(spec.shape[0]//2)
         label_lengths.append(len(label))
 
-    spectrograms = nn.utils.rnn.pad_sequence(spectrograms, batch_first=True).unsqueeze(1).transpose(2, 3)
+    spectrograms = nn.utils.rnn.pad_sequence(
+        spectrograms, batch_first=True).unsqueeze(1).transpose(2, 3)
     labels = nn.utils.rnn.pad_sequence(labels, batch_first=True)
 
     return spectrograms, labels, input_lengths, label_lengths
