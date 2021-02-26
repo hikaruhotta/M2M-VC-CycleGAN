@@ -6,10 +6,13 @@ Adapted from https://colab.research.google.com/drive/1IPpwx4rX32rqHKpLz7dc8sOKsp
 import torch.nn.functional as F
 
 
-def train(model, device, train_loader, criterion, optimizer, scheduler, epoch, iter_meter):
+def train(model, device, train_loader, criterion, optimizer, scheduler, epoch, iter_meter, logger):
     model.train()
     data_len = len(train_loader.dataset)
+    logger.start_epoch()
     for batch_idx, _data in enumerate(train_loader):
+        logger.start_iter()
+        
         spectrograms, labels, input_lengths, label_lengths = _data
         spectrograms, labels = spectrograms.to(device), labels.to(device)
 
@@ -22,8 +25,7 @@ def train(model, device, train_loader, criterion, optimizer, scheduler, epoch, i
         loss = criterion(output, labels, input_lengths, label_lengths)
         loss.backward()
 
-        # experiment.log_metric('loss', loss.item(), step=iter_meter.get())
-        # experiment.log_metric('learning_rate', scheduler.get_lr(), step=iter_meter.get())
+        logger.log_iter(loss_dict={'loss': loss.item(), 'learning_rate': scheduler.get_lr()})
 
         optimizer.step()
         scheduler.step()
@@ -32,3 +34,7 @@ def train(model, device, train_loader, criterion, optimizer, scheduler, epoch, i
             print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                 epoch, batch_idx * len(spectrograms), data_len,
                 100. * batch_idx / len(train_loader), loss.item()))
+
+        logger.end_iter()
+
+    logger.end_epoch()
