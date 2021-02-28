@@ -1,11 +1,11 @@
-"""
-Models in CycleGAN CV3.
-Adapted from https://github.com/jackaduma/CycleGAN-VC3/blob/main/model.py
-"""
+#! python
+# -*- coding: utf-8 -*-
+# Author: kun
+# @Time: 2019-06-28 14:35
 
 import torch.nn as nn
 import torch
-from cycleGAN.tfan_module import TFAN_1D, TFAN_2D
+import numpy as np
 
 
 class GLU(nn.Module):
@@ -121,7 +121,7 @@ class Generator(nn.Module):
     def __init__(self):
         super(Generator, self).__init__()
 
-        # 2D Conv Layer
+        # 2D Conv Layer 
         self.conv1 = nn.Conv2d(in_channels=1,  # TODO 1 ?
                                out_channels=128,
                                kernel_size=(5, 15),
@@ -148,20 +148,13 @@ class Generator(nn.Module):
                                                 padding=2)
 
         # 2D -> 1D Conv
-        # self.conv2dto1dLayer = nn.Sequential(nn.Conv1d(in_channels=2304,
-        #                                                out_channels=256,
-        #                                                kernel_size=1,
-        #                                                stride=1,
-        #                                                padding=0),
-        #                                      nn.InstanceNorm1d(num_features=256,
-        #                                                        affine=True))
-
-        self.conv2dto1dLayer = nn.Conv1d(in_channels=2304,
-                                         out_channels=256,
-                                         kernel_size=1,
-                                         stride=1,
-                                         padding=0)
-        self.conv2dto1dLayer_tfan = TFAN_1D(256)
+        self.conv2dto1dLayer = nn.Sequential(nn.Conv1d(in_channels=2304,
+                                                       out_channels=256,
+                                                       kernel_size=1,
+                                                       stride=1,
+                                                       padding=0),
+                                             nn.InstanceNorm1d(num_features=256,
+                                                               affine=True))
 
         # Residual Blocks
         self.residualLayer1 = ResidualLayer(in_channels=256,
@@ -196,20 +189,13 @@ class Generator(nn.Module):
                                             padding=1)
 
         # 1D -> 2D Conv
-        # self.conv1dto2dLayer = nn.Sequential(nn.Conv1d(in_channels=256,
-        #                                                out_channels=2304,
-        #                                                kernel_size=1,
-        #                                                stride=1,
-        #                                                padding=0),
-        #                                      nn.InstanceNorm1d(num_features=2304,
-        #                                                        affine=True))
-
-        self.conv1dto2dLayer = nn.Conv1d(in_channels=256,
-                                         out_channels=2304,
-                                         kernel_size=1,
-                                         stride=1,
-                                         padding=0)
-        self.conv1dto2dLayer_tfan = TFAN_1D(2304)
+        self.conv1dto2dLayer = nn.Sequential(nn.Conv1d(in_channels=256,
+                                                       out_channels=2304,
+                                                       kernel_size=1,
+                                                       stride=1,
+                                                       padding=0),
+                                             nn.InstanceNorm1d(num_features=2304,
+                                                               affine=True))
 
         # UpSample Layer
         self.upSample1 = self.upSample(in_channels=256,
@@ -218,15 +204,11 @@ class Generator(nn.Module):
                                        stride=1,
                                        padding=2)
 
-        self.upSample1_tfan = TFAN_2D(1024 // 4)
-        self.glu = GLU()
-
         self.upSample2 = self.upSample(in_channels=256,
                                        out_channels=512,
                                        kernel_size=5,
                                        stride=1,
                                        padding=2)
-        self.upSample2_tfan = TFAN_2D(512 // 4)
 
         self.lastConvLayer = nn.Conv2d(in_channels=128,
                                        out_channels=1,
@@ -247,43 +229,32 @@ class Generator(nn.Module):
 
         return self.ConvLayer
 
-    # def upSample(self, in_channels, out_channels, kernel_size, stride, padding):
-    #     self.convLayer = nn.Sequential(nn.Conv2d(in_channels=in_channels,
-    #                                              out_channels=out_channels,
-    #                                              kernel_size=kernel_size,
-    #                                              stride=stride,
-    #                                              padding=padding),
-    #                                    nn.PixelShuffle(upscale_factor=2),
-    #                                    nn.InstanceNorm2d(
-    #                                        num_features=out_channels // 4,
-    #                                        affine=True),
-    #                                    GLU())
-    #     return self.convLayer
-
     def upSample(self, in_channels, out_channels, kernel_size, stride, padding):
         self.convLayer = nn.Sequential(nn.Conv2d(in_channels=in_channels,
                                                  out_channels=out_channels,
                                                  kernel_size=kernel_size,
                                                  stride=stride,
                                                  padding=padding),
-                                       nn.PixelShuffle(upscale_factor=2))
+                                       nn.PixelShuffle(upscale_factor=2),
+                                       nn.InstanceNorm2d(
+                                           num_features=out_channels // 4,
+                                           affine=True),
+                                       GLU())
         return self.convLayer
 
     def forward(self, input):
         # GLU
-        print("Generator forward input: ", input.shape)
+        # print("Generator forward input: ", input.shape)
         input = input.unsqueeze(1)
-        print("Generator forward input: ", input.shape)
-        seg_1d = input  # for TFAN module
-
+        # print("Generator forward input: ", input.shape)
         conv1 = self.conv1(input) * torch.sigmoid(self.conv1_gates(input))
-        print("Generator forward conv1: ", conv1.shape)
+        # print("Generator forward conv1: ", conv1.shape)
 
         # DownloadSample
         downsample1 = self.downSample1(conv1)
-        print("Generator forward downsample1: ", downsample1.shape)
+        # print("Generator forward downsample1: ", downsample1.shape)
         downsample2 = self.downSample2(downsample1)
-        print("Generator forward downsample2: ", downsample2.shape)
+        # print("Generator forward downsample2: ", downsample2.shape)
 
         # 2D -> 1D
         # reshape
@@ -292,8 +263,6 @@ class Generator(nn.Module):
         # print("Generator forward reshape2dto1d: ", reshape2dto1d.shape)
         conv2dto1d_layer = self.conv2dto1dLayer(reshape2dto1d)
         # print("Generator forward conv2dto1d_layer: ", conv2dto1d_layer.shape)
-
-        conv2dto1d_layer = self.conv2dto1dLayer_tfan(conv2dto1d_layer, seg_1d)
 
         residual_layer_1 = self.residualLayer1(conv2dto1d_layer)
         residual_layer_2 = self.residualLayer2(residual_layer_1)
@@ -307,26 +276,16 @@ class Generator(nn.Module):
         # 1D -> 2D
         conv1dto2d_layer = self.conv1dto2dLayer(residual_layer_6)
         # print("Generator forward conv1dto2d_layer: ", conv1dto2d_layer.shape)
-
-        conv1dto2d_layer = self.conv1dto2dLayer_tfan(conv1dto2d_layer, seg_1d)
-
         # reshape
         reshape1dto2d = conv1dto2d_layer.unsqueeze(2)
         reshape1dto2d = reshape1dto2d.view(reshape1dto2d.size(0), 256, 9, -1)
         # print("Generator forward reshape1dto2d: ", reshape1dto2d.shape)
 
-        seg_2d = reshape1dto2d
-
         # UpSample
         upsample_layer_1 = self.upSample1(reshape1dto2d)
         # print("Generator forward upsample_layer_1: ", upsample_layer_1.shape)
-        upsample_layer_1 = self.upSample1_tfan(upsample_layer_1, seg_2d)
-        upsample_layer_1 = self.glu(upsample_layer_1)
-
         upsample_layer_2 = self.upSample2(upsample_layer_1)
         # print("Generator forward upsample_layer_2: ", upsample_layer_2.shape)
-        upsample_layer_2 = self.upSample2_tfan(upsample_layer_2, seg_2d)
-        upsample_layer_2 = self.glu(upsample_layer_2)
 
         output = self.lastConvLayer(upsample_layer_2)
         # print("Generator forward output: ", output.shape)
@@ -369,7 +328,7 @@ class Discriminator(nn.Module):
 
         self.downSample4 = self.downSample(in_channels=1024,
                                            out_channels=1024,
-                                           kernel_size=[1, 10],  # [1, 5] for cyclegan-vc2
+                                           kernel_size=[1, 5],
                                            stride=(1, 1),
                                            padding=(0, 2))
 
@@ -416,7 +375,6 @@ class Discriminator(nn.Module):
 
 if __name__ == '__main__':
     import sys
-    import numpy as np
 
     args = sys.argv
     print(args)
@@ -434,7 +392,7 @@ if __name__ == '__main__':
     input = torch.randn(10, 36, 1100)  # (N, C_in, Width) For Conv1d
     np.random.seed(0)
     # print(np.random.randn(10))
-    input = np.random.randn(2, 80, 64)
+    input = np.random.randn(2, 36, 128)
     input = torch.from_numpy(input).float()
     print("Generator input: ", input.shape)
     generator = Generator()
