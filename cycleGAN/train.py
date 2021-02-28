@@ -63,16 +63,14 @@ class CycleGANTraining(object):
         self.discriminator_optimizer.zero_grad()
 
     def train(self):
-        # Training Begins
         for epoch in range(self.start_epoch, self.num_epochs):
-            # Preparing Dataset
             n_samples = len(self.dataset)
 
             for i, (real_A, real_B) in enumerate(tqdm(train_loader)):
                 num_iterations = (
                     n_samples // self.mini_batch_size) * epoch + i
 
-                if num_iterations > self.decay_after:  # TODO: move to end of script once logger has been integrated
+                if num_iterations > self.decay_after:  # TODO: move to end of training loop once logger has been integrated
                     identity_loss_lambda = 0
                     self.adjust_lr_rate(
                         self.generator_optimizer, name='generator')
@@ -97,16 +95,16 @@ class CycleGANTraining(object):
                 d_fake_B = self.discriminator_B(fake_B)
 
                 # For Second Step Adverserial Loss
-                # TODO: comment out since not being used???
-                d_fake_cycle_A = self.discriminator_A(cycle_A)
-                d_fake_cycle_B = self.discriminator_B(cycle_B)
+                # TODO: comment out since not being used??? CIRCLE BACK TO THIS !!!!!!!!!!!!!!!!!!
+                # d_fake_cycle_A = self.discriminator_A(cycle_A)
+                # d_fake_cycle_B = self.discriminator_B(cycle_B)
 
                 # Generator Cycle Loss
                 cycleLoss = torch.mean(
                     torch.abs(real_A - cycle_A)) + torch.mean(torch.abs(real_B - cycle_B))
 
                 # Generator Identity Loss
-                identiyLoss = torch.mean(
+                identityLoss = torch.mean(
                     torch.abs(real_A - identity_A)) + torch.mean(torch.abs(real_B - identity_B))
 
                 # Generator Loss
@@ -115,7 +113,7 @@ class CycleGANTraining(object):
 
                 # Total Generator Loss
                 generator_loss = generator_loss_A2B + generator_loss_B2A + \
-                    cycle_loss_lambda * cycleLoss + identity_loss_lambda * identiyLoss
+                    self.cycle_loss_lambda * cycleLoss + self.identity_loss_lambda * identityLoss
                 self.generator_loss_store.append(generator_loss.item())
 
                 # Backprop for Generator
