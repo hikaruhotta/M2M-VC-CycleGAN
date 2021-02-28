@@ -91,7 +91,7 @@ def data_processing(data, phase, text_transform):
     input_lengths = []
     label_lengths = []
     # for (waveform, _, utterance, _, _, _) in data:
-    for (waveform, sample_rate, utterance, speaker_id, gender) in data:
+    for (waveform, sample_rate, utterance, speaker_id, duration) in data:
         audio_transforms = get_audio_transforms(phase, sample_rate)
         spec = audio_transforms(waveform).squeeze(0).transpose(0, 1)
         spectrograms.append(spec)
