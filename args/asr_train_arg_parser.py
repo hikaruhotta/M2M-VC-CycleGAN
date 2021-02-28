@@ -21,6 +21,8 @@ class ASRTrainArgParser(BaseArgParser):
             '--dropout', type=float, default=0.1, help='Dropout rate.')
         self.parser.add_argument(
             '--lr', type=float, default=5e-4, help='Learning rate.')
+        self.parser.add_argument(
+            '--gamma', type=float, default=0.99, help='Annealing rate for LR scheduler.')
 
         # Model args
         self.parser.add_argument(
