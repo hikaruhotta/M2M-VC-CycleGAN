@@ -400,7 +400,7 @@ if __name__ == '__main__':
     print("Generator output shape: ", output.shape)
 
     # Discriminator Dimensionality Testing
-    # input = torch.randn(32, 1, 24, 128)  # (N, C_in, height, width) For Conv2d
+    output = torch.randn(32, 24, 128)  # (N, C_in, height, width) For Conv2d
     discriminator = Discriminator()
     output = discriminator(output)
     print("Discriminator output shape ", output.shape)
