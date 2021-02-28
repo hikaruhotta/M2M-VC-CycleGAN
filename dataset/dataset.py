@@ -31,8 +31,8 @@ class Dataset(data.Dataset):
         # Sanity check: return_pair is only valid if using both datasets
         if self.return_pair:
             assert self.coraal and self.voc
-            self.coraal_df, self.coraal_wav_paths, self.coraal_txt_paths, self.coraal_ground_truth_text, self.coraal_durations, self.coraal_speaker_ids = self._read_manifest(self.base_dir, split, "coraal")
-            self.voc_df, self.voc_wav_paths, self.voc_txt_paths, self.voc_ground_truth_text, self.voc_durations, self.voc_speaker_ids = self._read_manifest(self.base_dir, split, "voc")
+            self.coraal_df, self.coraal_wav_paths, self.coraal_txt_paths, self.coraal_ground_truth_text, self.coraal_durations, self.coraal_speaker_ids = self._read_manifest(self.base_dir, dataset="coraal", speaker_id=args.target_id)
+            self.voc_df, self.voc_wav_paths, self.voc_txt_paths, self.voc_ground_truth_text, self.voc_durations, self.voc_speaker_ids = self._read_manifest(self.base_dir, dataset="voc", speaker_id=args.source_id)
         else:
             # Merge dataframes
             self.df = None
@@ -41,7 +41,7 @@ class Dataset(data.Dataset):
             if self.voc:
                 self.df = pd.read_csv(f"./manifests/voc_manifest.csv", sep=',').append(self.df, ignore_index=True)
                 
-            self.df, self.wav_paths, self.txt_paths, self.ground_truth_text, self.durations, self.speaker_ids = self._read_manifest(self.base_dir, split, df=self.df)
+            self.df, self.wav_paths, self.txt_paths, self.ground_truth_text, self.durations, self.speaker_ids = self._read_manifest(self.base_dir, split=split, df=self.df)
 
 
 
@@ -63,15 +63,22 @@ class Dataset(data.Dataset):
         # print(characters)
 
 
-    def _read_manifest(self, data_dir, split, dataset=None, df=None):
+    def _read_manifest(self, data_dir, split=None, dataset=None, df=None, speaker_id=None):
 
         if df is None:
             # Load manifest file which defines dataset
             manifest_path = f"./manifests/{dataset}_manifest.csv"
             df = pd.read_csv(manifest_path, sep=',')
 
-        # Filter samples in split (train/val/test)
-        df = df[df['split'] == split]
+        if speaker_id is not None:
+            # If done voice conversion, then filter by speaker_id
+            df['speaker_id'] = df['speaker_id'].astype(str)
+            df = df[df['speaker_id'] == speaker_id]
+        else:
+            # Filter samples in split (train/val/test)
+            df = df[df['split'] == split]
+
+        print(f'dataset {dataset} df has {len(df)} elements')
         wav_files = df['wav_file'].tolist()
         txt_files = df['txt_file'].tolist()
 
@@ -122,10 +129,11 @@ class Dataset(data.Dataset):
             return len(self.df)
 
 if __name__ == '__main__':
-    from args.asr_train_arg_parser import ASRTrainArgParser
-    parser = ASRTrainArgParser()
+    from args.cycleGAN_train_arg_parser import CycleGANTrainArgParser
+    parser = CycleGANTrainArgParser()
     args = parser.parse_args()
-    ds = Dataset(args, split='train', coraal=True, voc=True, return_pair=False)
+    print(args)
+    ds = Dataset(args, split='train', coraal=True, voc=True, return_pair=True)
 
     for item in ds:
         if len(item) == 2:
