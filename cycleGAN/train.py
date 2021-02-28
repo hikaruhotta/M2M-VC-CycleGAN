@@ -5,9 +5,7 @@ import time
 import librosa
 import pickle
 
-import preprocess
-from trainingDataset import trainingDataset
-from model_tf import Generator, Discriminator
+from cycleGAN.model import Generator, Discriminator
 from tqdm import tqdm
 
 import torch
