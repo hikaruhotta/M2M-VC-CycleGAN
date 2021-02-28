@@ -17,13 +17,15 @@ from asr.utils import IterMeter
 from logger.train_logger import TrainLogger
 from args.asr_train_arg_parser import ASRTrainArgParser
 from saver.model_saver import ModelSaver
-
+from dataset.dataset import Dataset
 
 def main(args, train_url="train-clean-100", test_url="test-clean"):
-    train_dataset = torchaudio.datasets.LIBRISPEECH(
-        args.data_dir, url=train_url, download=True)
-    test_dataset = torchaudio.datasets.LIBRISPEECH(
-        args.data_dir, url=test_url, download=True)
+    train_dataset = Dataset(args, "train")
+    test_dataset = Dataset(args, "test")
+    # train_dataset = torchaudio.datasets.LIBRISPEECH(
+    #     args.data_dir, url=train_url, download=True)
+    # test_dataset = torchaudio.datasets.LIBRISPEECH(
+    #     args.data_dir, url=test_url, download=True)
 
     train_audio_transforms = get_audio_transforms('train')
     valid_audio_transforms = get_audio_transforms('valid')
