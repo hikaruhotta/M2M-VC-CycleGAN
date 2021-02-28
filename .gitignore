@@ -10,6 +10,5 @@ logs/
 events.out.tfevents.*
 *.gif
 *.tar
-*.ipynb
 *.ipynb_checkpoints
 *.out
