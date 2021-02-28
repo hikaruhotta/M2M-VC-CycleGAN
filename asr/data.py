@@ -69,7 +69,7 @@ class TextTransform:
         return ''.join(string).replace('<SPACE>', ' ')
 
 
-def get_audio_transforms(phase, sample_rate):
+def get_audio_transforms(phase, sample_rate=16000):
     if phase == 'train':
         transforms = nn.Sequential(
             torchaudio.transforms.MelSpectrogram(
@@ -85,13 +85,14 @@ def get_audio_transforms(phase, sample_rate):
     return transforms
 
 
-def data_processing(data, audio_transforms, text_transform):
+def data_processing(data, phase, text_transform):
     spectrograms = []
     labels = []
     input_lengths = []
     label_lengths = []
     # for (waveform, _, utterance, _, _, _) in data:
-    for (waveform, sample_rate, utterance, speaker_ids, gender) in data:
+    for (waveform, sample_rate, utterance, speaker_id, gender) in data:
+        audio_transforms = get_audio_transforms(phase, sample_rate)
         spec = audio_transforms(waveform).squeeze(0).transpose(0, 1)
         spectrograms.append(spec)
         label = torch.Tensor(text_transform.text_to_int(utterance.lower()))
