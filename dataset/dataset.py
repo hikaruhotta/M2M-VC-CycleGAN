@@ -24,7 +24,7 @@ class Dataset(data.Dataset):
 
         # Load manifest file which defines dataset
         data_base_dir = Path(args.data_dir)
-        coraal_manifest_path = "./coraal_manifest.csv"
+        coraal_manifest_path = "./manifests/coraal_manifest.csv"
         self.df = pd.read_csv(coraal_manifest_path, sep=',')
 
         # Filter samples in split (train/val/test)
@@ -47,20 +47,18 @@ class Dataset(data.Dataset):
 
         # Sanity check that txt_path contents are the same as ground_truth_text
         # TO-DO: Remove this once sanity check is confirmed
-        characters = {}
-        for i, (txt_path, gt) in enumerate(zip(self.txt_paths, self.ground_truth_text)):
-            with open(txt_path, 'r') as reader:
-                assert reader.read() == gt
-                if 'PS4' in gt:
-                    self.ground_truth_text[i] = gt.replace('PS4', 'PS FOUR')
-                if len(characters):
-                    characters |= set(gt.lower())
-                else:
-                    characters = set(gt.lower())
+        # characters = {}
+        # for i, (txt_path, gt) in enumerate(zip(self.txt_paths, self.ground_truth_text)):
+        #     with open(txt_path, 'r') as reader:
+        #         # assert reader.read() == gt
+        #         if len(characters):
+        #             characters |= set(gt.lower())
+        #         else:
+        #             characters = set(gt.lower())
         
-        characters = list(characters)
-        characters.sort()
-        print(characters)
+        # characters = list(characters)
+        # characters.sort()
+        # print(characters)
 
 
 
