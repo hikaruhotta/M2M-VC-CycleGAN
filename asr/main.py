@@ -20,9 +20,8 @@ from saver.model_saver import ModelSaver
 from dataset.dataset import Dataset
 
 def main(args, train_url="train-clean-100", valid_url="test-clean"):
-    train_dataset = Dataset(args, "train")
-    print(train_dataset)
-    valid_dataset = Dataset(args, "val")
+    train_dataset = Dataset(args, "train", coraal=True, voc=False, return_pair=False)
+    valid_dataset = Dataset(args, "val", coraal=True, voc=False, return_pair=False)
     # train_dataset = torchaudio.datasets.LIBRISPEECH(
     #     args.data_dir, url=train_url, download=True)
     # valid_dataset = torchaudio.datasets.LIBRISPEECH(
