@@ -33,5 +33,3 @@ def train(args, model, train_loader, criterion, optimizer, scheduler, logger):
         scheduler.step()
 
         logger.end_iter()
-
-    logger.end_epoch()

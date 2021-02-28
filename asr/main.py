@@ -55,11 +55,12 @@ def main(args, train_url="train-clean-100", test_url="test-clean"):
 
     optimizer = optim.AdamW(model.parameters(), args.lr)
     criterion = nn.CTCLoss(blank=28).to(args.device)
-    scheduler = optim.lr_scheduler.OneCycleLR(optimizer, max_lr=args.lr,
-                                              steps_per_epoch=int(
-                                                  len(train_loader)),
-                                              epochs=args.num_epochs,
-                                              anneal_strategy='linear')
+    # scheduler = optim.lr_scheduler.OneCycleLR(optimizer, max_lr=args.lr,
+    #                                           steps_per_epoch=int(
+    #                                               len(train_loader)),
+    #                                           epochs=args.num_epochs,
+    #                                           anneal_strategy='linear')
+    scheduler = optim.lr_scheduler.ExponentialLR(optimizer, 0.99)
 
     saver = ModelSaver(args, max_ckpts=args.max_ckpts, metric_name="test_wer", maximize_metric=False)
 
@@ -69,14 +70,14 @@ def main(args, train_url="train-clean-100", test_url="test-clean"):
     logger = TrainLogger(args, len(train_loader.dataset))
     logger.log_hparams(args)
 
-    iter_meter = IterMeter()
-    for epoch in range(1, args.num_epochs + 1):
+    for epoch in range(args.start_epoch, args.num_epochs + 1):
         train(args, model, train_loader, criterion,
               optimizer, scheduler, logger)
         metric_dict = test(args, model, test_loader, criterion, logger)
         if logger.epoch % args.epochs_per_save == 0:
             saver.save(logger.epoch, model, optimizer, scheduler, args.device,
                        "SpeechRecognitionModel", metric_dict["test_wer"])
+        logger.end_epoch()
 
 
 if __name__ == "__main__":
