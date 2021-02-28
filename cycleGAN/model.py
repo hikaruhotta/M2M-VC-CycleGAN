@@ -14,8 +14,8 @@ class GLU(nn.Module):
         # Custom Implementation because the Voice Conversion Cycle GAN
         # paper assumes GLU won't reduce the dimension of tensor by 2.
 
-    def forward(self, input):
-        return input * torch.sigmoid(input)
+    def forward(self, x):
+        return x * torch.sigmoid(x)
 
 
 class PixelShuffle(nn.Module):
@@ -23,13 +23,13 @@ class PixelShuffle(nn.Module):
         super(PixelShuffle, self).__init__()
         # Custom Implementation because PyTorch PixelShuffle requires,
         # 4D input. Whereas, in this case we have have 3D array
-        self.upscale_factor = upscale_factor
+        self.upscale_factor = upscale_factor  #TODO: not using this parameter
 
-    def forward(self, input):
-        n = input.shape[0]
-        c_out = input.shape[1] // 2
-        w_new = input.shape[2] * 2
-        return input.view(n, c_out, w_new)
+    def forward(self, x):
+        n = x.shape[0]
+        c_out = x.shape[1] // 2
+        w_new = x.shape[2] * 2
+        return x.view(n, c_out, w_new)
 
 
 ##########################################################################################
@@ -80,15 +80,15 @@ class ResidualLayer(nn.Module):
                                               nn.InstanceNorm1d(num_features=in_channels,
                                                                 affine=True))
 
-    def forward(self, input):
-        h1_norm = self.conv1d_layer(input)
-        h1_gates_norm = self.conv_layer_gates(input)
+    def forward(self, x):
+        h1_norm = self.conv1d_layer(x)
+        h1_gates_norm = self.conv_layer_gates(x)
 
         # GLU
         h1_glu = h1_norm * torch.sigmoid(h1_gates_norm)
 
         h2_norm = self.conv1d_out_layer(h1_glu)
-        return input + h2_norm
+        return x + h2_norm
 
 
 ##########################################################################################
@@ -111,9 +111,9 @@ class downSample_Generator(nn.Module):
                                              nn.InstanceNorm2d(num_features=out_channels,
                                                                affine=True))
 
-    def forward(self, input):
+    def forward(self, x):
         # GLU
-        return self.convLayer(input) * torch.sigmoid(self.convLayer_gates(input))
+        return self.convLayer(x) * torch.sigmoid(self.convLayer_gates(x))
 
 
 ##########################################################################################
@@ -142,7 +142,7 @@ class Generator(nn.Module):
                                                 padding=2)
 
         self.downSample2 = downSample_Generator(in_channels=256,
-                                                out_channels=256,
+                                                out_channels=256,  #TODO: paper has 512 channels
                                                 kernel_size=5,
                                                 stride=2,
                                                 padding=2)
@@ -216,7 +216,7 @@ class Generator(nn.Module):
                                        stride=(1, 1),
                                        padding=(2, 7))
 
-    def downSample(self, in_channels, out_channels, kernel_size, stride, padding):
+    def downSample(self, in_channels, out_channels, kernel_size, stride, padding):  #TODO: function not used
         self.ConvLayer = nn.Sequential(nn.Conv1d(in_channels=in_channels,
                                                  out_channels=out_channels,
                                                  kernel_size=kernel_size,
@@ -242,12 +242,12 @@ class Generator(nn.Module):
                                        GLU())
         return self.convLayer
 
-    def forward(self, input):
+    def forward(self, x):
         # GLU
         # print("Generator forward input: ", input.shape)
-        input = input.unsqueeze(1)
+        x = x.unsqueeze(1)
         # print("Generator forward input: ", input.shape)
-        conv1 = self.conv1(input) * torch.sigmoid(self.conv1_gates(input))
+        conv1 = self.conv1(x) * torch.sigmoid(self.conv1_gates(x))
         # print("Generator forward conv1: ", conv1.shape)
 
         # DownloadSample
@@ -295,7 +295,7 @@ class Generator(nn.Module):
 
 
 ##########################################################################################
-# 鉴别器  PatchGAN
+# PatchGAN
 class Discriminator(nn.Module):
     def __init__(self):
         super(Discriminator, self).__init__()
@@ -350,12 +350,12 @@ class Discriminator(nn.Module):
                                   GLU())
         return convLayer
 
-    def forward(self, input):
+    def forward(self, x):
         # input has shape [batch_size, num_features, time]
         # discriminator requires shape [batchSize, 1, num_features, time]
-        input = input.unsqueeze(1)
+        x = x.unsqueeze(1)
         # print("Discriminator forward input: ", input.shape)
-        conv_layer_1 = self.convLayer1(input)
+        conv_layer_1 = self.convLayer1(x)
         # print("Discriminator forward conv_layer_1: ", conv_layer_1.shape)
 
         downsample1 = self.downSample1(conv_layer_1)
@@ -389,14 +389,14 @@ if __name__ == '__main__':
         sys.exit(0)
 
     # Generator Dimensionality Testing
-    input = torch.randn(10, 36, 1100)  # (N, C_in, Width) For Conv1d
+    x = torch.randn(10, 36, 1100)  # (N, C_in, Width) For Conv1d
     np.random.seed(0)
     # print(np.random.randn(10))
-    input = np.random.randn(2, 36, 128)
-    input = torch.from_numpy(input).float()
-    print("Generator input: ", input.shape)
+    x = np.random.randn(2, 36, 128)
+    x = torch.from_numpy(x).float()
+    print("Generator input: ", x.shape)
     generator = Generator()
-    output = generator(input)
+    output = generator(x)
     print("Generator output shape: ", output.shape)
 
     # Discriminator Dimensionality Testing
