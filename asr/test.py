@@ -34,7 +34,6 @@ def test(args, model, test_loader, criterion, logger):
             for j in range(len(decoded_preds)):
                 test_cer.append(cer(decoded_targets[j], decoded_preds[j]))
                 test_wer.append(wer(decoded_targets[j], decoded_preds[j]))
-            break
 
     avg_cer = sum(test_cer) / len(test_cer)
     avg_wer = sum(test_wer) / len(test_wer)
