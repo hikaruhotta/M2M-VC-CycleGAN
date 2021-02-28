@@ -30,7 +30,6 @@ class CycleGANTrainArgParser(TrainArgParser):
         self.parser.add_argument(
             '--cycle_loss_lambda', type=float, default=10, help='Lambda value for cycle consistency loss.')
         self.parser.add_argument(
-            '--cycle_loss_lambda', type=float, default=5, help='Lambda value for identity loss.')
+            '--identity_loss_lambda', type=float, default=5, help='Lambda value for identity loss.')
         
-        self.parser.set_defaults(num_epochs=200000, decay_after=10000, start_epoch=1, steps_per_print=100, epochs_per_save=5, 
-                                 steps_per_visual=1000, gaussian_kernel_size=51)
+        self.parser.set_defaults(batch_size=1, num_epochs=200000, decay_after=10000, start_epoch=1, steps_per_print=100, )

@@ -1,19 +1,14 @@
-import os
-import numpy as np
-import argparse
-import time
-import librosa
-import pickle
-
-from cycleGAN.model import Generator, Discriminator
 from tqdm import tqdm
 
 import torch
 import torch.utils.data as data
 
+from cycleGAN.model import Generator, Discriminator
+from args.cycleGAN_train_arg_parser import CycleGANTrainArgParser
 
 class CycleGANTraining(object):
     def __init__(self, args):
+        self.num_epochs = args.num_epochs
         self.generator_lr = args.generator_lr
         self.discriminator_lr = args.discriminator_lr
         self.decay_after = args.decay_after
@@ -74,9 +69,10 @@ class CycleGANTraining(object):
             n_samples = len(self.dataset)
 
             for i, (real_A, real_B) in enumerate(tqdm(train_loader)):
-                num_iterations = (n_samples // self.mini_batch_size) * epoch + i
-                    
-                if num_iterations > self.decay_after:
+                num_iterations = (
+                    n_samples // self.mini_batch_size) * epoch + i
+
+                if num_iterations > self.decay_after:  # TODO: move to end of script once logger has been integrated
                     identity_loss_lambda = 0
                     self.adjust_lr_rate(
                         self.generator_optimizer, name='generator')
@@ -101,7 +97,8 @@ class CycleGANTraining(object):
                 d_fake_B = self.discriminator_B(fake_B)
 
                 # For Second Step Adverserial Loss
-                d_fake_cycle_A = self.discriminator_A(cycle_A)  # TODO: comment out since not being used???
+                # TODO: comment out since not being used???
+                d_fake_cycle_A = self.discriminator_A(cycle_A)
                 d_fake_cycle_B = self.discriminator_B(cycle_B)
 
                 # Generator Cycle Loss
@@ -170,81 +167,16 @@ class CycleGANTraining(object):
                 self.reset_grad()
                 d_loss.backward()
                 self.discriminator_optimizer.step()
-                
+
                 if num_iterations % args.steps_per_print == 0:
-                    print(f"Epoch: {epoch} Step: {num_iterations} Generator Loss: {generator_loss.item()} Discriminator Loss: {d_loss.item()}"
+                    print(f"Epoch: {epoch} Step: {num_iterations} Generator Loss: {generator_loss.item()} Discriminator Loss: {d_loss.item()}")
 
-            if epoch % 2000 == 0 and epoch != 0:
-                print(f"Epoch: {epoch} Generator Loss: {generator_loss.item()} Discriminator Loss: {d_loss.item()}"
+            if epoch % 2000 == 0:
+                print(f"Epoch: {epoch} Generator Loss: {generator_loss.item()} Discriminator Loss: {d_loss.item()}")
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(
-        description="Train CycleGAN using source dataset and target dataset")
-
-    logf0s_normalization_default = './cache/logf0s_normalization.npz'
-    mcep_normalization_default = './cache/mcep_normalization.npz'
-    coded_sps_A_norm = './cache/coded_sps_A_norm.pickle'
-    coded_sps_B_norm = './cache/coded_sps_B_norm.pickle'
-    model_checkpoint = './model_checkpoint/'
-    resume_training_at = './model_checkpoint/_CycleGAN_CheckPoint'
-    #     resume_training_at = None
-
-    validation_A_dir_default = './data/S0913/'
-    output_A_dir_default = './converted_sound/S0913'
-
-    validation_B_dir_default = './data/gaoxiaosong/'
-    output_B_dir_default = './converted_sound/gaoxiaosong/'
-
-    parser.add_argument('--logf0s_normalization', type=str,
-                        help="Cached location for log f0s normalized", default=logf0s_normalization_default)
-    parser.add_argument('--mcep_normalization', type=str,
-                        help="Cached location for mcep normalization", default=mcep_normalization_default)
-    parser.add_argument('--coded_sps_A_norm', type=str,
-                        help="mcep norm for data A", default=coded_sps_A_norm)
-    parser.add_argument('--coded_sps_B_norm', type=str,
-                        help="mcep norm for data B", default=coded_sps_B_norm)
-    parser.add_argument('--model_checkpoint', type=str,
-                        help="location where you want to save the model", default=model_checkpoint)
-    parser.add_argument('--resume_training_at', type=str,
-                        help="Location of the pre-trained model to resume training",
-                        default=resume_training_at)
-    parser.add_argument('--validation_A_dir', type=str,
-                        help="validation set for sound source A", default=validation_A_dir_default)
-    parser.add_argument('--output_A_dir', type=str,
-                        help="output for converted Sound Source A", default=output_A_dir_default)
-    parser.add_argument('--validation_B_dir', type=str,
-                        help="Validation set for sound source B", default=validation_B_dir_default)
-    parser.add_argument('--output_B_dir', type=str,
-                        help="Output for converted sound Source B", default=output_B_dir_default)
-
-    argv = parser.parse_args()
-
-    logf0s_normalization = argv.logf0s_normalization
-    mcep_normalization = argv.mcep_normalization
-    coded_sps_A_norm = argv.coded_sps_A_norm
-    coded_sps_B_norm = argv.coded_sps_B_norm
-    model_checkpoint = argv.model_checkpoint
-    resume_training_at = argv.resume_training_at
-
-    validation_A_dir = argv.validation_A_dir
-    output_A_dir = argv.output_A_dir
-    validation_B_dir = argv.validation_B_dir
-    output_B_dir = argv.output_B_dir
-
-    # Check whether following cached files exists
-    if not os.path.exists(logf0s_normalization) or not os.path.exists(mcep_normalization):
-        print(
-            "Cached files do not exist, please run the program preprocess_training.py first")
-
-    cycleGAN = CycleGANTraining(logf0s_normalization=logf0s_normalization,
-                                mcep_normalization=mcep_normalization,
-                                coded_sps_A_norm=coded_sps_A_norm,
-                                coded_sps_B_norm=coded_sps_B_norm,
-                                model_checkpoint=model_checkpoint,
-                                validation_A_dir=validation_A_dir,
-                                output_A_dir=output_A_dir,
-                                validation_B_dir=validation_B_dir,
-                                output_B_dir=output_B_dir,
-                                restart_training_at=resume_training_at)
-    cycleGAN.train()
+if __name__ == "__main__":
+    parser = CycleGANTrainArgParser()
+    args = parser.parse_args()
+    cycleGAN = CycleGANTraining(args)
+    # cycleGAN.train()
