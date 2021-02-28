@@ -17,16 +17,19 @@ from asr.utils import IterMeter
 from logger.train_logger import TrainLogger
 from args.asr_train_arg_parser import ASRTrainArgParser
 from saver.model_saver import ModelSaver
+from dataset.dataset import Dataset
 
+def main(args, train_url="train-clean-100", valid_url="test-clean"):
+    train_dataset = Dataset(args, "train")
+    print(train_dataset)
+    valid_dataset = Dataset(args, "test")
+    # train_dataset = torchaudio.datasets.LIBRISPEECH(
+    #     args.data_dir, url=train_url, download=True)
+    # valid_dataset = torchaudio.datasets.LIBRISPEECH(
+    #     args.data_dir, url=valid_url, download=True)
 
-def main(args, train_url="train-clean-100", test_url="test-clean"):
-    train_dataset = torchaudio.datasets.LIBRISPEECH(
-        args.data_dir, url=train_url, download=True)
-    test_dataset = torchaudio.datasets.LIBRISPEECH(
-        args.data_dir, url=test_url, download=True)
-
-    train_audio_transforms = get_audio_transforms('train')
-    valid_audio_transforms = get_audio_transforms('valid')
+    # train_audio_transforms = get_audio_transforms('train')
+    # valid_audio_transforms = get_audio_transforms('valid')
 
     text_transform = TextTransform()
 
@@ -34,14 +37,14 @@ def main(args, train_url="train-clean-100", test_url="test-clean"):
                                    batch_size=args.batch_size,
                                    shuffle=True,
                                    collate_fn=lambda x: data_processing(
-                                       x, train_audio_transforms, text_transform),
+                                       x, "train", text_transform),
                                    num_workers=args.num_workers,
                                    pin_memory=True)
-    test_loader = data.DataLoader(dataset=test_dataset,
+    valid_loader = data.DataLoader(dataset=valid_dataset,
                                   batch_size=args.batch_size,
                                   shuffle=False,
                                   collate_fn=lambda x: data_processing(
-                                      x, valid_audio_transforms, text_transform),
+                                      x, "valid", text_transform),
                                   num_workers=args.num_workers,
                                   pin_memory=True)
 
@@ -55,11 +58,12 @@ def main(args, train_url="train-clean-100", test_url="test-clean"):
 
     optimizer = optim.AdamW(model.parameters(), args.lr)
     criterion = nn.CTCLoss(blank=28).to(args.device)
-    scheduler = optim.lr_scheduler.OneCycleLR(optimizer, max_lr=args.lr,
-                                              steps_per_epoch=int(
-                                                  len(train_loader)),
-                                              epochs=args.num_epochs,
-                                              anneal_strategy='linear')
+    # scheduler = optim.lr_scheduler.OneCycleLR(optimizer, max_lr=args.lr,
+    #                                           steps_per_epoch=int(
+    #                                               len(train_loader)),
+    #                                           epochs=args.num_epochs,
+    #                                           anneal_strategy='linear')
+    scheduler = optim.lr_scheduler.ExponentialLR(optimizer, args.gamma)
 
     saver = ModelSaver(args, max_ckpts=args.max_ckpts, metric_name="test_wer", maximize_metric=False)
 
@@ -69,19 +73,19 @@ def main(args, train_url="train-clean-100", test_url="test-clean"):
     logger = TrainLogger(args, len(train_loader.dataset))
     logger.log_hparams(args)
 
-    iter_meter = IterMeter()
-    for epoch in range(1, args.num_epochs + 1):
+    for epoch in range(args.start_epoch, args.num_epochs + 1):
         train(args, model, train_loader, criterion,
               optimizer, scheduler, logger)
-        metric_dict = test(args, model, test_loader, criterion, logger)
+        metric_dict = test(args, model, valid_loader, criterion, logger)
         if logger.epoch % args.epochs_per_save == 0:
             saver.save(logger.epoch, model, optimizer, scheduler, args.device,
                        "SpeechRecognitionModel", metric_dict["test_wer"])
+        logger.end_epoch()
 
 
 if __name__ == "__main__":
     parser = ASRTrainArgParser()
     args = parser.parse_args()
-    libri_train_set = "train-clean-100"
-    libri_test_set = "test-clean"
-    main(args, libri_train_set, libri_test_set)
+    # libri_train_set = "train-clean-100"
+    # libri_valid_set = "test-clean"
+    main(args)

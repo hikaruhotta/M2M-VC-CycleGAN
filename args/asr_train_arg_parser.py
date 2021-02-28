@@ -3,10 +3,10 @@ Arguments for training ASR model.
 Inherits BaseArgParser.
 """
 
-from args.base_arg_parser import BaseArgParser
+from args.train_arg_parser import TrainArgParser
 
 
-class ASRTrainArgParser(BaseArgParser):
+class ASRTrainArgParser(TrainArgParser):
     """
     Class which implements an argument parser for args used only in train mode.
     It inherits BaseArgParser.
@@ -16,11 +16,10 @@ class ASRTrainArgParser(BaseArgParser):
         super(ASRTrainArgParser, self).__init__()
         self.isTrain = True
 
-        self.parser.add_argument('--num_epochs', type=int, default=20, help='Number of epochs to train.')
         self.parser.add_argument(
             '--dropout', type=float, default=0.1, help='Dropout rate.')
         self.parser.add_argument(
-            '--lr', type=float, default=5e-4, help='Learning rate.')
+            '--gamma', type=float, default=0.99, help='Annealing rate for LR scheduler.')
 
         # Model args
         self.parser.add_argument(
@@ -35,8 +34,3 @@ class ASRTrainArgParser(BaseArgParser):
             '--n_feats', type=int, default=128, help='Number of features.')
         self.parser.add_argument(
             '--stride', type=int, default=2, help='Conv2D kernel stride.')
-
-        self.parser.add_argument('--max_ckpts', type=int, default=3, help='Max ckpts to save.')
-        self.parser.add_argument('--epochs_per_save', type=int, default=1,
-                                 help='Number of epochs between saving a checkpoint to save_dir.')
-        self.parser.add_argument('--continue_train', action='store_true', help='continue training: load the latest model')
