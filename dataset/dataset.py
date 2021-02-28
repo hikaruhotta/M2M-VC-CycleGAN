@@ -26,12 +26,13 @@ class Dataset(data.Dataset):
         self.voc = voc
         self.return_pair = return_pair
         self.datasets = ['coraal']*coraal + ['voc']*voc
-        
+        self.base_dir = Path(args.data_dir)
+
         # Sanity check: return_pair is only valid if using both datasets
         if self.return_pair:
             assert self.coraal and self.voc
-            self.coraal_df, self.coraal_wav_paths, self.coraal_txt_paths, self.coraal_ground_truth_text, self.coraal_durations, self.coraal_speaker_ids = self._read_manifest(args.data_dir, split, "coraal")
-            self.voc_df, self.voc_wav_paths, self.voc_txt_paths, self.voc_ground_truth_text, self.voc_durations, self.voc_speaker_ids = self._read_manifest(args.data_dir, split, "voc")
+            self.coraal_df, self.coraal_wav_paths, self.coraal_txt_paths, self.coraal_ground_truth_text, self.coraal_durations, self.coraal_speaker_ids = self._read_manifest(self.base_dir, split, "coraal")
+            self.voc_df, self.voc_wav_paths, self.voc_txt_paths, self.voc_ground_truth_text, self.voc_durations, self.voc_speaker_ids = self._read_manifest(self.base_dir, split, "voc")
         else:
             # Merge dataframes
             self.df = None
@@ -40,7 +41,7 @@ class Dataset(data.Dataset):
             if self.voc:
                 self.df = pd.read_csv(f"./manifests/voc_manifest.csv", sep=',').append(self.df, ignore_index=True)
                 
-            self.df, self.wav_paths, self.txt_paths, self.ground_truth_text, self.durations, self.speaker_ids = self._read_manifest(args.data_dir, split, df=self.df)
+            self.df, self.wav_paths, self.txt_paths, self.ground_truth_text, self.durations, self.speaker_ids = self._read_manifest(self.base_dir, split, df=self.df)
 
 
 
@@ -77,7 +78,7 @@ class Dataset(data.Dataset):
         # Contruct wav and txt paths
         # TO-DO: Change these to relative paths once manifests are updated
         wav_paths = [data_dir / wav_files[i] for i in range(len(wav_files))]
-        txt_paths = [data_dir / txt_files[i] for i in range(len(txt_paths))]
+        txt_paths = [data_dir / txt_files[i] for i in range(len(txt_files))]
 
         ground_truth_text = df['groundtruth_text_train'].tolist()
         durations = df['duration'].tolist()
@@ -119,3 +120,18 @@ class Dataset(data.Dataset):
             return max(len(self.coraal_df), len(self.voc_df))
         else:
             return len(self.df)
+
+if __name__ == '__main__':
+    from args.asr_train_arg_parser import ASRTrainArgParser
+    parser = ASRTrainArgParser()
+    args = parser.parse_args()
+    ds = Dataset(args, split='train', coraal=True, voc=True, return_pair=False)
+
+    for item in ds:
+        if len(item) == 2:
+            item1, item2 = item
+            print(item1)
+            print(item2)
+        else:
+            print(item)
+        break
