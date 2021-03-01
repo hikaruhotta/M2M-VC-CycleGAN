@@ -98,7 +98,7 @@ class TrainLogger(BaseLogger):
         for key in args_dict:
             hparams.update({'hparams/' + key: args_dict[key]})
 
-        self._log_text(hparams)
+        self.log_text(hparams)
 
     def log_iter(self, loss_dict={}):
         """

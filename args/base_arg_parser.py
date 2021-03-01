@@ -49,8 +49,10 @@ class BaseArgParser(object):
                                  help='Comma-separated list of GPU IDs.')
 
         # Dataset Args
+        self.parser.add_argument('--small_dataset', default=False, action='store_true',
+                                 help=('Train with an abbreviated dataset.')) 
         self.parser.add_argument('--coraal', default=False, action='store_true',
-                                 help=('Whether to train on the coraal dataset.'))       
+                                 help=('Whether to train on the coraal dataset.'))      
         self.parser.add_argument('--voc', default=False, action='store_true',
                                  help=('Whether to train on the voc dataset.')) 
         self.parser.add_argument('--return_pair', default=False, action='store_true',
@@ -115,8 +117,8 @@ class BaseArgParser(object):
         if len(args.gpu_ids) > 0 and torch.cuda.is_available():
             # Set default GPU for `tensor.to('cuda')`
             torch.cuda.set_device(0)
-            args.gpu_ids = ['cuda' + ':' + str(gpu_id)
-                            for gpu_id in args.gpu_ids]
+            args.gpu_ids = ['cuda' + ':' + str(i)
+                            for i in range(len(args.gpu_ids))]
             args.device = 'cuda'
         else:
             args.device = 'cpu'
