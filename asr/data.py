@@ -90,7 +90,7 @@ def data_processing(data, phase, text_transform):
     labels = []
     input_lengths = []
     label_lengths = []
-    # for (waveform, _, utterance, _, _, _) in data:
+    # for (waveform, sample_rate, utterance, _, _, _) in data:
     for (waveform, sample_rate, utterance, speaker_id, duration) in data:
         audio_transforms = get_audio_transforms(phase, sample_rate)
         spec = audio_transforms(waveform).squeeze(0).transpose(0, 1)
@@ -103,5 +103,6 @@ def data_processing(data, phase, text_transform):
     spectrograms = nn.utils.rnn.pad_sequence(
         spectrograms, batch_first=True).unsqueeze(1).transpose(2, 3)
     labels = nn.utils.rnn.pad_sequence(labels, batch_first=True)
-
+    
+    # print(spectrograms, labels, input_lengths, label_lengths)
     return spectrograms, labels, input_lengths, label_lengths

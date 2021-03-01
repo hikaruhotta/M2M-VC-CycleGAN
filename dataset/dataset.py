@@ -37,7 +37,7 @@ class Dataset(data.Dataset):
             # Merge dataframes
             self.df = None
             if self.coraal:
-                self.df = pd.read_csv(f"./manifests/coraal_manifest.csv", sep=',')
+                self.df = pd.read_csv(f"./manifests/coraal_small_manifest.csv", sep=',')
             if self.voc:
                 self.df = pd.read_csv(f"./manifests/voc_manifest.csv", sep=',').append(self.df, ignore_index=True)
                 

@@ -31,6 +31,9 @@ def test(args, model, test_loader, criterion, logger):
             text_transform = TextTransform()
             decoded_preds, decoded_targets = GreedyDecoder(
                 output.transpose(0, 1), text_transform, labels, label_lengths)
+            if i < 2:
+                print(f'GT: {decoded_targets}')
+                print(f'Prediction {decoded_preds}')
             for j in range(len(decoded_preds)):
                 test_cer.append(cer(decoded_targets[j], decoded_preds[j]))
                 test_wer.append(wer(decoded_targets[j], decoded_preds[j]))
