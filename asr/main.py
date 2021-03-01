@@ -62,17 +62,18 @@ def main(args, train_url="train-clean-100", valid_url="test-clean"):
 
     optimizer = optim.AdamW(model.parameters(), args.lr)
     criterion = nn.CTCLoss(blank=28).to(args.device)
-    # scheduler = optim.lr_scheduler.OneCycleLR(optimizer, max_lr=args.lr,
-    #                                           steps_per_epoch=int(
-    #                                               len(train_loader)),
-    #                                           epochs=args.num_epochs,
-    #                                           anneal_strategy='linear')
-    scheduler = optim.lr_scheduler.ExponentialLR(optimizer, args.gamma)
+    scheduler = optim.lr_scheduler.OneCycleLR(optimizer, max_lr=args.lr,
+                                              steps_per_epoch=int(
+                                                  len(train_loader)),
+                                              epochs=args.num_epochs,
+                                              anneal_strategy='linear')
+    # scheduler = optim.lr_scheduler.ExponentialLR(optimizer, args.gamma)
 
     saver = ModelSaver(args, max_ckpts=args.max_ckpts, metric_name="test_wer", maximize_metric=False)
 
     if args.continue_train:
-        saver.load_model(model, "SpeechRecognitionModel", args.ckpt_path, optimizer, scheduler)
+        saver.load_model(model, "SpeechRecognitionModel", args.ckpt_path, None, None)
+        # saver.load_model(model, "SpeechRecognitionModel", args.ckpt_path, optimizer, scheduler)
 
     logger = TrainLogger(args, len(train_loader.dataset))
     logger.log_hparams(args)
