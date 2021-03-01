@@ -49,18 +49,20 @@ class Dataset(data.Dataset):
 
         # Sanity check that txt_path contents are the same as ground_truth_text
         # TO-DO: Remove this once sanity check is confirmed
-        # characters = {}
-        # for i, (txt_path, gt) in enumerate(zip(self.txt_paths, self.ground_truth_text)):
-        #     with open(txt_path, 'r') as reader:
-        #         # assert reader.read() == gt
-        #         if len(characters):
-        #             characters |= set(gt.lower())
-        #         else:
-        #             characters = set(gt.lower())
+        characters = {}
+        for i, (txt_path, gt) in enumerate(zip(self.txt_paths, self.ground_truth_text)):
+            with open(txt_path, 'r') as reader:
+                # assert reader.read() == gt
+                if '-' in gt:
+                    print(gt)
+                if len(characters):
+                    characters |= set(gt.lower())
+                else:
+                    characters = set(gt.lower())
         
-        # characters = list(characters)
-        # characters.sort()
-        # print(characters)
+        characters = list(characters)
+        characters.sort()
+        print(characters)
 
 
     def _read_manifest(self, data_dir, split=None, dataset=None, df=None, speaker_id=None):
