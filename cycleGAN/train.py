@@ -5,20 +5,23 @@ import torch.utils.data as data
 
 from cycleGAN.model import Generator, Discriminator
 from args.cycleGAN_train_arg_parser import CycleGANTrainArgParser
+from dataset.dataset import Dataset
 
 class CycleGANTraining(object):
     def __init__(self, args):
         self.num_epochs = args.num_epochs
+        self.start_epoch = args.start_epoch
         self.generator_lr = args.generator_lr
         self.discriminator_lr = args.discriminator_lr
         self.decay_after = args.decay_after
         self.generator_lr_decay = self.generator_lr / self.num_epochs
         self.discriminator_lr_decay = self.discriminator_lr / self.num_epochs
-
+        self.mini_batch_size = args.batch_size
         self.cycle_loss_lambda = args.cycle_loss_lambda
         self.identity_loss_lambda = args.identity_loss_lambda
-
-        self.train_dataset = None  # TODO: replace with Sofian's
+        self.device = args.device
+        
+        self.train_dataset = Dataset(args, coraal=True, voc=True, return_pair=True)
         self.train_dataloader = data.DataLoader(dataset=self.train_dataset,
                                                 batch_size=args.batch_size,
                                                 shuffle=True,
@@ -64,9 +67,12 @@ class CycleGANTraining(object):
 
     def train(self):
         for epoch in range(self.start_epoch, self.num_epochs):
-            n_samples = len(self.dataset)
+            n_samples = len(self.train_dataset)
 
-            for i, (real_A, real_B) in enumerate(tqdm(train_loader)):
+            for i, (input_A, input_B) in enumerate(tqdm(self.train_dataloader)):
+                real_A, _, _, _, _ = input_A
+                real_B, _, _, _, _ = input_B
+
                 num_iterations = (
                     n_samples // self.mini_batch_size) * epoch + i
 
@@ -177,4 +183,4 @@ if __name__ == "__main__":
     parser = CycleGANTrainArgParser()
     args = parser.parse_args()
     cycleGAN = CycleGANTraining(args)
-    # cycleGAN.train()
+    cycleGAN.train()

@@ -104,8 +104,9 @@ class Dataset(data.Dataset):
         items = []
 
         if self.return_pair:
-            waveform, sample_rate = torchaudio.load(self.coraal_wav_paths[index])
-            items.append((waveform, sample_rate, self.coraal_ground_truth_text[index], self.coraal_speaker_ids[index], self.coraal_durations[index]))
+            coraal_index = random.randint(0, len(self.coraal_df) - 1)
+            waveform, sample_rate = torchaudio.load(self.coraal_wav_paths[coraal_index])
+            items.append((waveform, sample_rate, self.coraal_ground_truth_text[coraal_index], self.coraal_speaker_ids[coraal_index], self.coraal_durations[coraal_index]))
 
             voc_index = random.randint(0, len(self.voc_df) - 1)
             waveform, sample_rate = torchaudio.load(self.voc_wav_paths[voc_index])
