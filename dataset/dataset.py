@@ -53,6 +53,8 @@ class Dataset(data.Dataset):
         # for i, (txt_path, gt) in enumerate(zip(self.txt_paths, self.ground_truth_text)):
         #     with open(txt_path, 'r') as reader:
         #         # assert reader.read() == gt
+        #         if '-' in gt:
+        #             print(gt)
         #         if len(characters):
         #             characters |= set(gt.lower())
         #         else:
