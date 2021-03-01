@@ -9,6 +9,7 @@ import torch.nn as nn
 import torch.utils.data as data
 import torch.optim as optim
 import torchaudio
+
 from asr.data import TextTransform, get_audio_transforms, data_processing
 from asr.models import SpeechRecognitionModel
 from asr.train import train
@@ -20,8 +21,8 @@ from saver.model_saver import ModelSaver
 from dataset.dataset import Dataset
 
 def main(args, train_url="train-clean-100", valid_url="test-clean"):
-    train_dataset = Dataset(args, "train", coraal=True, voc=False, return_pair=False)
-    valid_dataset = Dataset(args, "val", coraal=True, voc=False, return_pair=False)
+    train_dataset = Dataset(args, "train", coraal=args.coraal, voc=args.voc, return_pair=args.return_pair)
+    valid_dataset = Dataset(args, "val", coraal=args.coraal, voc=args.voc, return_pair=args.return_pair)
     # train_dataset = torchaudio.datasets.LIBRISPEECH(
     #     args.data_dir, url=train_url, download=True)
     # valid_dataset = torchaudio.datasets.LIBRISPEECH(
@@ -51,6 +52,10 @@ def main(args, train_url="train-clean-100", valid_url="test-clean"):
         args.n_cnn_layers, args.n_rnn_layers, args.rnn_dim,
         args.n_class, args.n_feats, args.stride, args.dropout
     ).to(args.device)
+
+    if torch.cuda.device_count() > 1:
+        print(f"Using {torch.cuda.device_count()} GPUs!")
+        model = nn.DataParallel(model)
 
     print('Num Model Parameters', sum(
         [param.nelement() for param in model.parameters()]))
