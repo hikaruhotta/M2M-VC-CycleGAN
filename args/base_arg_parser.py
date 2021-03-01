@@ -48,6 +48,14 @@ class BaseArgParser(object):
         self.parser.add_argument('--gpu_ids', type=str, default='0',
                                  help='Comma-separated list of GPU IDs.')
 
+        # Dataset Args
+        self.parser.add_argument('--coraal', default=False, action='store_true',
+                                 help=('Whether to train on the coraal dataset.'))       
+        self.parser.add_argument('--voc', default=False, action='store_true',
+                                 help=('Whether to train on the voc dataset.')) 
+        self.parser.add_argument('--return_pair', default=False, action='store_true',
+                                 help=('Whether to return paired data. Used in CycleGAN training.')) 
+
         # Logger Args
         self.parser.add_argument('--steps_per_print', type=int, default=1000,
                                  help='Number of steps between printing loss to the console and TensorBoard.')
@@ -59,6 +67,7 @@ class BaseArgParser(object):
         # Saver Args
         self.parser.add_argument('--ckpt_path', type=str, default=None,
                                  help='Path to model checkpoint')
+
 
     def parse_args(self):
         """
