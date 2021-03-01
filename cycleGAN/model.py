@@ -244,17 +244,17 @@ class Generator(nn.Module):
 
     def forward(self, x):
         # GLU
-        # print("Generator forward input: ", input.shape)
+        print("Generator forward input: ", x.shape)
         x = x.unsqueeze(1)
-        # print("Generator forward input: ", input.shape)
+        print("Generator forward input: ", x.shape)
         conv1 = self.conv1(x) * torch.sigmoid(self.conv1_gates(x))
-        # print("Generator forward conv1: ", conv1.shape)
+        print("Generator forward conv1: ", conv1.shape)
 
         # DownloadSample
         downsample1 = self.downSample1(conv1)
-        # print("Generator forward downsample1: ", downsample1.shape)
+        print("Generator forward downsample1: ", downsample1.shape)
         downsample2 = self.downSample2(downsample1)
-        # print("Generator forward downsample2: ", downsample2.shape)
+        print("Generator forward downsample2: ", downsample2.shape)
 
         # 2D -> 1D
         # reshape
