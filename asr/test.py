@@ -16,6 +16,7 @@ def test(args, model, test_loader, criterion, logger):
     model.eval()
     test_loss = 0
     test_cer, test_wer = [], []
+    text_log_dict = {}
     with torch.no_grad():
         for i, _data in tqdm(enumerate(test_loader)):
             spectrograms, labels, input_lengths, label_lengths = _data
@@ -31,9 +32,11 @@ def test(args, model, test_loader, criterion, logger):
             text_transform = TextTransform()
             decoded_preds, decoded_targets = GreedyDecoder(
                 output.transpose(0, 1), text_transform, labels, label_lengths)
-            if i < 2:
-                print(f'GT: {decoded_targets}')
-                print(f'Prediction {decoded_preds}')
+            if i < 5:
+                # print(f'GT: {decoded_targets}')
+                # print(f'Prediction {decoded_preds}')
+                log_str = f"GT: {decoded_targets}  \n  \nPrediction: {decoded_preds}"
+                text_log_dict[f"epoch{logger.epoch}_step{i}"] = log_str
             for j in range(len(decoded_preds)):
                 test_cer.append(cer(decoded_targets[j], decoded_preds[j]))
                 test_wer.append(wer(decoded_targets[j], decoded_preds[j]))
@@ -43,5 +46,6 @@ def test(args, model, test_loader, criterion, logger):
     metric_dict = {'test_loss': test_loss, 'test_cer': avg_cer, 'test_wer': avg_wer}
     logger.log_metrics(metric_dict)
     print('Test set: Average loss: {:.4f}, Average CER: {:4f} Average WER: {:.4f}\n'.format(test_loss, avg_cer, avg_wer))
+    logger.log_text(text_log_dict)
 
     return metric_dict

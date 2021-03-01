@@ -34,3 +34,8 @@ class ASRTrainArgParser(TrainArgParser):
             '--n_feats', type=int, default=128, help='Number of features.')
         self.parser.add_argument(
             '--stride', type=int, default=2, help='Conv2D kernel stride.')
+
+        self.parser.add_argument(
+            '--pretrained_ckpt_path', type=str,
+            default="/home/ubuntu/data/results/librispeech_vanilla/ckpts/021_SpeechRecognitionModel.pth.tar",
+            help='Model pretrained on Librispeech.')
