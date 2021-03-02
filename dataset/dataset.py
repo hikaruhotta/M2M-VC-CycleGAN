@@ -37,9 +37,9 @@ class Dataset(data.Dataset):
             # Merge dataframes
             self.df = None
             if self.coraal:
-                self.df = pd.read_csv(f"./manifests/coraal_small_manifest.csv", sep=',')
+                self.df = pd.read_csv(f"../manifests/coraal_small_manifest.csv", sep=',')
             if self.voc:
-                self.df = pd.read_csv(f"./manifests/voc_manifest.csv", sep=',').append(self.df, ignore_index=True)
+                self.df = pd.read_csv(f"../manifests/voc_manifest.csv", sep=',').append(self.df, ignore_index=True)
                 
             self.df, self.wav_paths, self.txt_paths, self.ground_truth_text, self.durations, self.speaker_ids = self._read_manifest(self.base_dir, split=split, df=self.df)
 
