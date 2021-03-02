@@ -72,8 +72,9 @@ def main(args, train_url="train-clean-100", valid_url="test-clean"):
     saver = ModelSaver(args, max_ckpts=args.max_ckpts, metric_name="test_wer", maximize_metric=False)
 
     if args.continue_train:
-        saver.load_model(model, "SpeechRecognitionModel", args.ckpt_path, None, None)
-        # saver.load_model(model, "SpeechRecognitionModel", args.ckpt_path, optimizer, scheduler)
+        saver.load_model(model, "SpeechRecognitionModel", args.ckpt_path, optimizer, scheduler)
+    elif args.pretrained_ckpt_path:
+        saver.load_model(model, "SpeechRecognitionModel", args.pretrained_ckpt_path, None, None)
 
     logger = TrainLogger(args, len(train_loader.dataset))
     logger.log_hparams(args)

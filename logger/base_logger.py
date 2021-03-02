@@ -55,7 +55,7 @@ class BaseLogger(object):
         self.global_step = round_down(
             (self.epoch - 1) * dataset_len, args.batch_size)
 
-    def _log_text(self, text_dict):
+    def log_text(self, text_dict):
         """
         Log all strings in a dict as scalars to TensorBoard.
         Args:

@@ -6,6 +6,7 @@ import torch.utils.data as data
 from cycleGAN.model import Generator, Discriminator
 from args.cycleGAN_train_arg_parser import CycleGANTrainArgParser
 from dataset.dataset import Dataset
+from cycleGAN.utils import get_audio_transforms, data_processing
 
 class CycleGANTraining(object):
     def __init__(self, args):
@@ -22,8 +23,15 @@ class CycleGANTraining(object):
         self.device = args.device
         
         self.train_dataset = Dataset(args, coraal=True, voc=True, return_pair=True)
+        # self.train_dataloader = data.DataLoader(dataset=self.train_dataset,
+        #                                         batch_size=args.batch_size,
+        #                                         shuffle=True,
+        #                                         num_workers=args.num_workers,
+        #                                         pin_memory=True)
         self.train_dataloader = data.DataLoader(dataset=self.train_dataset,
                                                 batch_size=args.batch_size,
+                                                collate_fn=lambda x: data_processing(
+                                                    x, "train"),
                                                 shuffle=True,
                                                 num_workers=args.num_workers,
                                                 pin_memory=True)
@@ -68,11 +76,21 @@ class CycleGANTraining(object):
     def train(self):
         for epoch in range(self.start_epoch, self.num_epochs):
             n_samples = len(self.train_dataset)
-
-            for i, (input_A, input_B) in enumerate(tqdm(self.train_dataloader)):
-                real_A, _, _, _, _ = input_A
-                real_B, _, _, _, _ = input_B
-
+            # real_A = torch.randn(10, 36, 1000).to(self.device)
+            # real_B = torch.randn(10, 36, 1000).to(self.device)
+            # fake_B = self.generator_A2B(real_A)
+            # cycle_A = self.generator_B2A(fake_B)
+            # # print('1')
+            # fake_A = self.generator_B2A(real_B)
+            # cycle_B = self.generator_A2B(fake_A)
+            # # print('2')
+            # identity_A = self.generator_B2A(real_A)
+            # identity_B = self.generator_A2B(real_B)
+            # # print('3')
+            # d_fake_A = self.discriminator_A(fake_A)
+            # d_fake_B = self.discriminator_B(fake_B)
+            # continue
+            for i, (real_A, real_B) in enumerate(tqdm(self.train_dataloader)):
                 num_iterations = (
                     n_samples // self.mini_batch_size) * epoch + i
 
@@ -82,22 +100,26 @@ class CycleGANTraining(object):
                         self.generator_optimizer, name='generator')
                     self.adjust_lr_rate(
                         self.generator_optimizer, name='discriminator')
-
+                
                 real_A = real_A.to(self.device)
                 real_B = real_B.to(self.device)
 
                 # Train Generator
-
+                print('Computing fake_B')
                 fake_B = self.generator_A2B(real_A)
+                print('Computing cycle_A')
                 cycle_A = self.generator_B2A(fake_B)
-
+                print('Computing fake_A')
                 fake_A = self.generator_B2A(real_B)
+                print('Computing cycle_B')
                 cycle_B = self.generator_A2B(fake_A)
-
+                print('Computing identity_A')
                 identity_A = self.generator_B2A(real_A)
+                print('Computing identity_B')
                 identity_B = self.generator_A2B(real_B)
-
+                print('Computing d_fake_A')
                 d_fake_A = self.discriminator_A(fake_A)
+                print('Computing d_fake_B')
                 d_fake_B = self.discriminator_B(fake_B)
 
                 # For Second Step Adverserial Loss
@@ -106,6 +128,13 @@ class CycleGANTraining(object):
                 # d_fake_cycle_B = self.discriminator_B(cycle_B)
 
                 # Generator Cycle Loss
+                print(f'real_A shape = {real_A.shape}')
+                print(f'cycle_A shape = {cycle_A.shape}')
+                print(f'real_B shape = {real_B.shape}')
+                print(f'cycle_B shape = {cycle_B.shape}')
+                print(f'real_B shape = {real_B.shape}')
+                print(f'fake_A shape = {fake_A.shape}')
+                print(f'fake_B shape = {fake_B.shape}')
                 cycleLoss = torch.mean(
                     torch.abs(real_A - cycle_A)) + torch.mean(torch.abs(real_B - cycle_B))
 
