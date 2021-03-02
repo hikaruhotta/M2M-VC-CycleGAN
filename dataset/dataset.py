@@ -37,7 +37,10 @@ class Dataset(data.Dataset):
             # Merge dataframes
             self.df = None
             if self.coraal:
-                self.df = pd.read_csv(f"../manifests/coraal_small_manifest.csv", sep=',')
+                if args.small_dataset:
+                    self.df = pd.read_csv(f"./manifests/coraal_small_manifest.csv", sep=',')
+                else:
+                    self.df = pd.read_csv(f"./manifests/coraal_manifest.csv", sep=',')
             if self.voc:
                 self.df = pd.read_csv(f"../manifests/voc_manifest.csv", sep=',').append(self.df, ignore_index=True)
                 
@@ -80,7 +83,7 @@ class Dataset(data.Dataset):
             # Filter samples in split (train/val/test)
             df = df[df['split'] == split]
 
-        print(f'dataset {dataset} df has {len(df)} elements')
+        # print(f'dataset {dataset} df has {len(df)} elements')
         wav_files = df['wav_file'].tolist()
         txt_files = df['txt_file'].tolist()
 

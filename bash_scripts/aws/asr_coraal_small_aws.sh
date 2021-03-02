@@ -1,10 +1,10 @@
 python -W ignore::UserWarning -m asr.main \
-    --name combined_vanilla \
+    --name coraal_small_finetune \
     --data_dir ~/data/datasets \
     --save_dir ~/data/results \
     --coraal \
-    --voc \
-    --num_epochs 20 \
-    --batch_size 15 \
-    --gpu_ids 2,3 \
+    --small_dataset \
+    --num_epochs 50 \
+    --batch_size 10 \
+    --gpu_ids 0 \
     --num_workers 1 \
