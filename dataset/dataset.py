@@ -27,6 +27,7 @@ class Dataset(data.Dataset):
         self.return_pair = return_pair
         self.datasets = ['coraal']*coraal + ['voc']*voc
         self.base_dir = Path(args.data_dir)
+        self.manifest_path = Path(args.manifest_path)
 
         # Sanity check: return_pair is only valid if using both datasets
         if self.return_pair:
@@ -38,11 +39,11 @@ class Dataset(data.Dataset):
             self.df = None
             if self.coraal:
                 if args.small_dataset:
-                    self.df = pd.read_csv(f"./manifests/coraal_small_manifest.csv", sep=',')
+                    self.df = pd.read_csv(self.manifest_path / "coraal_small_manifest.csv", sep=',')
                 else:
-                    self.df = pd.read_csv(f"./manifests/coraal_manifest.csv", sep=',')
+                    self.df = pd.read_csv(self.manifest_path / "coraal_manifest.csv", sep=',')
             if self.voc:
-                self.df = pd.read_csv(f"../manifests/voc_manifest.csv", sep=',').append(self.df, ignore_index=True)
+                self.df = pd.read_csv(self.manifest_path / "voc_manifest.csv", sep=',').append(self.df, ignore_index=True)
                 
             self.df, self.wav_paths, self.txt_paths, self.ground_truth_text, self.durations, self.speaker_ids = self._read_manifest(self.base_dir, split=split, df=self.df)
 
@@ -72,8 +73,8 @@ class Dataset(data.Dataset):
 
         if df is None:
             # Load manifest file which defines dataset
-            manifest_path = f"./manifests/{dataset}_manifest.csv"
-            df = pd.read_csv(manifest_path, sep=',')
+            manifest_file = self.manifest_path / f"{dataset}_manifest.csv"
+            df = pd.read_csv(manifest_file, sep=',')
 
         if speaker_id is not None:
             # If done voice conversion, then filter by speaker_id
@@ -110,12 +111,12 @@ class Dataset(data.Dataset):
 
         if self.return_pair:
             coraal_index = random.randint(0, len(self.coraal_df) - 1)
-            waveform, sample_rate = torchaudio.load(self.coraal_wav_paths[coraal_index])
-            items.append((waveform, sample_rate, self.coraal_ground_truth_text[coraal_index], self.coraal_speaker_ids[coraal_index], self.coraal_durations[coraal_index]))
+            waveform_A, sample_rate_A = torchaudio.load(self.coraal_wav_paths[coraal_index])
+            items.append((waveform_A, sample_rate_A, self.coraal_ground_truth_text[coraal_index], self.coraal_speaker_ids[coraal_index], self.coraal_durations[coraal_index]))
 
             voc_index = random.randint(0, len(self.voc_df) - 1)
-            waveform, sample_rate = torchaudio.load(self.voc_wav_paths[voc_index])
-            items.append((waveform, sample_rate, self.voc_ground_truth_text[voc_index], self.voc_speaker_ids[voc_index], self.voc_durations[voc_index]))
+            waveform_B, sample_rate_B = torchaudio.load(self.voc_wav_paths[voc_index])
+            items.append((waveform_B, sample_rate_B, self.voc_ground_truth_text[voc_index], self.voc_speaker_ids[voc_index], self.voc_durations[voc_index]))
         else:
             waveform, sample_rate = torchaudio.load(self.wav_paths[index])
             items = [waveform, sample_rate, self.ground_truth_text[index], self.speaker_ids[index], self.durations[index]]

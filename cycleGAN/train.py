@@ -2,10 +2,12 @@ from tqdm import tqdm
 
 import torch
 import torch.utils.data as data
+import pickle
 
 from cycleGAN.model import Generator, Discriminator
 from args.cycleGAN_train_arg_parser import CycleGANTrainArgParser
 from dataset.dataset import Dataset
+from dataset.vc_dataset import trainingDataset
 from cycleGAN.utils import get_audio_transforms, data_processing
 
 class CycleGANTraining(object):
@@ -21,26 +23,63 @@ class CycleGANTraining(object):
         self.cycle_loss_lambda = args.cycle_loss_lambda
         self.identity_loss_lambda = args.identity_loss_lambda
         self.device = args.device
-        
-        self.train_dataset = Dataset(args, coraal=True, voc=True, return_pair=True)
+
+        # self.train_dataset = Dataset(args, coraal=True, voc=True, return_pair=True)
         # self.train_dataloader = data.DataLoader(dataset=self.train_dataset,
         #                                         batch_size=args.batch_size,
         #                                         shuffle=True,
         #                                         num_workers=args.num_workers,
         #                                         pin_memory=True)
-        self.train_dataloader = data.DataLoader(dataset=self.train_dataset,
-                                                batch_size=args.batch_size,
-                                                collate_fn=lambda x: data_processing(
-                                                    x, "train"),
-                                                shuffle=True,
-                                                num_workers=args.num_workers,
-                                                pin_memory=True)
+        # self.train_dataloader = data.DataLoader(dataset=self.train_dataset,
+        #                                         batch_size=args.batch_size,
+        #                                         collate_fn=lambda x: data_processing(
+        #                                             x, "train"),
+        #                                         shuffle=True,
+        #                                         num_workers=args.num_workers,
+        #                                         pin_memory=True)
+        # self.n_samples = len(self.train_dataset)
+
+        logf0s_normalization = '/home/sofianzalouk/sofian_dataset/cache/logf0s_normalization.npz'
+        mcep_normalization = '/home/sofianzalouk/sofian_dataset/cache/mcep_normalization.npz'
+        coded_sps_A_norm = '/home/sofianzalouk/sofian_dataset/cache/coded_sps_A_norm.pickle'
+        coded_sps_B_norm = '/home/sofianzalouk/sofian_dataset/cache/coded_sps_B_norm.pickle'
+
+        self.dataset_A = self.loadPickleFile(coded_sps_A_norm)
+        self.dataset_B = self.loadPickleFile(coded_sps_B_norm)
+
+        self.n_samples = len(self.dataset_A)
+        self.dataset = trainingDataset(datasetA=self.dataset_A,
+                                    datasetB=self.dataset_B,
+                                    n_frames=128)
+        self.train_dataloader = torch.utils.data.DataLoader(dataset=self.dataset,
+                                                    batch_size=self.mini_batch_size,
+                                                    shuffle=True,
+                                                    drop_last=False)
+        # # Speech Parameters
+        # logf0s_normalization = np.load(logf0s_normalization)
+        # self.log_f0s_mean_A = logf0s_normalization['mean_A']
+        # self.log_f0s_std_A = logf0s_normalization['std_A']
+        # self.log_f0s_mean_B = logf0s_normalization['mean_B']
+        # self.log_f0s_std_B = logf0s_normalization['std_B']
+
+        # mcep_normalization = np.load(mcep_normalization)
+        # self.coded_sps_A_mean = mcep_normalization['mean_A']
+        # self.coded_sps_A_std = mcep_normalization['std_A']
+        # self.coded_sps_B_mean = mcep_normalization['mean_B']
+        # self.coded_sps_B_std = mcep_normalization['std_B']
 
         # Generator and Discriminator
-        self.generator_A2B = Generator().to(args.device)
-        self.generator_B2A = Generator().to(args.device)
-        self.discriminator_A = Discriminator().to(args.device)
-        self.discriminator_B = Discriminator().to(args.device)
+        self.generator_A2B = Generator().to(self.device)
+        self.generator_B2A = Generator().to(self.device)
+        self.discriminator_A = Discriminator().to(self.device)
+        self.discriminator_B = Discriminator().to(self.device)
+
+
+        # # Generator and Discriminator
+        # self.generator_A2B = Generator().to(args.device)
+        # self.generator_B2A = Generator().to(args.device)
+        # self.discriminator_A = Discriminator().to(args.device)
+        # self.discriminator_B = Discriminator().to(args.device)
 
         # Optimizer
         g_params = list(self.generator_A2B.parameters()) + \
@@ -73,26 +112,15 @@ class CycleGANTraining(object):
         self.generator_optimizer.zero_grad()
         self.discriminator_optimizer.zero_grad()
 
+    def loadPickleFile(self, fileName):
+        with open(fileName, 'rb') as f:
+            return pickle.load(f)
+
     def train(self):
         for epoch in range(self.start_epoch, self.num_epochs):
-            n_samples = len(self.train_dataset)
-            # real_A = torch.randn(10, 36, 1000).to(self.device)
-            # real_B = torch.randn(10, 36, 1000).to(self.device)
-            # fake_B = self.generator_A2B(real_A)
-            # cycle_A = self.generator_B2A(fake_B)
-            # # print('1')
-            # fake_A = self.generator_B2A(real_B)
-            # cycle_B = self.generator_A2B(fake_A)
-            # # print('2')
-            # identity_A = self.generator_B2A(real_A)
-            # identity_B = self.generator_A2B(real_B)
-            # # print('3')
-            # d_fake_A = self.discriminator_A(fake_A)
-            # d_fake_B = self.discriminator_B(fake_B)
-            # continue
             for i, (real_A, real_B) in enumerate(tqdm(self.train_dataloader)):
                 num_iterations = (
-                    n_samples // self.mini_batch_size) * epoch + i
+                    self.n_samples // self.mini_batch_size) * epoch + i
 
                 if num_iterations > self.decay_after:  # TODO: move to end of training loop once logger has been integrated
                     identity_loss_lambda = 0
@@ -101,40 +129,20 @@ class CycleGANTraining(object):
                     self.adjust_lr_rate(
                         self.generator_optimizer, name='discriminator')
                 
-                real_A = real_A.to(self.device)
-                real_B = real_B.to(self.device)
+                real_A = real_A.to(self.device, dtype=torch.float)
+                real_B = real_B.to(self.device, dtype=torch.float)
 
                 # Train Generator
-                print('Computing fake_B')
                 fake_B = self.generator_A2B(real_A)
-                print('Computing cycle_A')
                 cycle_A = self.generator_B2A(fake_B)
-                print('Computing fake_A')
                 fake_A = self.generator_B2A(real_B)
-                print('Computing cycle_B')
                 cycle_B = self.generator_A2B(fake_A)
-                print('Computing identity_A')
                 identity_A = self.generator_B2A(real_A)
-                print('Computing identity_B')
                 identity_B = self.generator_A2B(real_B)
-                print('Computing d_fake_A')
                 d_fake_A = self.discriminator_A(fake_A)
-                print('Computing d_fake_B')
                 d_fake_B = self.discriminator_B(fake_B)
 
-                # For Second Step Adverserial Loss
-                # TODO: comment out since not being used??? CIRCLE BACK TO THIS !!!!!!!!!!!!!!!!!!
-                # d_fake_cycle_A = self.discriminator_A(cycle_A)
-                # d_fake_cycle_B = self.discriminator_B(cycle_B)
-
                 # Generator Cycle Loss
-                print(f'real_A shape = {real_A.shape}')
-                print(f'cycle_A shape = {cycle_A.shape}')
-                print(f'real_B shape = {real_B.shape}')
-                print(f'cycle_B shape = {cycle_B.shape}')
-                print(f'real_B shape = {real_B.shape}')
-                print(f'fake_A shape = {fake_A.shape}')
-                print(f'fake_B shape = {fake_B.shape}')
                 cycleLoss = torch.mean(
                     torch.abs(real_A - cycle_A)) + torch.mean(torch.abs(real_B - cycle_B))
 
