@@ -392,7 +392,7 @@ if __name__ == '__main__':
     x = torch.randn(10, 36, 1100)  # (N, C_in, Width) For Conv1d
     np.random.seed(0)
     # print(np.random.randn(10))
-    x = np.random.randn(2, 36, 128)
+    x = np.random.randn(1, 36, 128)
     x = torch.from_numpy(x).float()
     print("Generator input: ", x.shape)
     generator = Generator()

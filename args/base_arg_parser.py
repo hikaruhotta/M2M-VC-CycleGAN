@@ -44,10 +44,11 @@ class BaseArgParser(object):
         self.parser.add_argument(
             '--save_dir', type=str, default='/home/results/', help='Directory for results including ckpts.')
         self.parser.add_argument(
+            '--manifest_path', type=str, default='./manifests/', help='Directory for manifest files.')
+        self.parser.add_argument(
             '--seed', type=int, default=0, help='Random Seed.')
         self.parser.add_argument('--gpu_ids', type=str, default='0',
                                  help='Comma-separated list of GPU IDs.')
-
         # Dataset Args
         self.parser.add_argument('--small_dataset', default=False, action='store_true',
                                  help=('Train with an abbreviated dataset.')) 
