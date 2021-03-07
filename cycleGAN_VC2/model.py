@@ -244,25 +244,25 @@ class Generator(nn.Module):
 
     def forward(self, x):
         # GLU
-        print("Generator forward input: ", x.shape)
+        # print("Generator forward input: ", x.shape)
         x = x.unsqueeze(1)
-        print("Generator forward input: ", x.shape)
+        # print("Generator forward input: ", x.shape)
         conv1 = self.conv1(x) * torch.sigmoid(self.conv1_gates(x))
-        print("Generator forward conv1: ", conv1.shape)
+        # print("Generator forward conv1: ", conv1.shape)
 
         # DownloadSample
         downsample1 = self.downSample1(conv1)
-        print("Generator forward downsample1: ", downsample1.shape)
+        # print("Generator forward downsample1: ", downsample1.shape)
         downsample2 = self.downSample2(downsample1)
-        print("Generator forward downsample2: ", downsample2.shape)
+        # print("Generator forward downsample2: ", downsample2.shape)
 
         # 2D -> 1D
         # reshape
         reshape2dto1d = downsample2.view(downsample2.size(0), 2304, 1, -1)
         reshape2dto1d = reshape2dto1d.squeeze(2)
-        print("Generator forward reshape2dto1d: ", reshape2dto1d.shape)
+        # print("Generator forward reshape2dto1d: ", reshape2dto1d.shape)
         conv2dto1d_layer = self.conv2dto1dLayer(reshape2dto1d)
-        print("Generator forward conv2dto1d_layer: ", conv2dto1d_layer.shape)
+        # print("Generator forward conv2dto1d_layer: ", conv2dto1d_layer.shape)
 
         residual_layer_1 = self.residualLayer1(conv2dto1d_layer)
         residual_layer_2 = self.residualLayer2(residual_layer_1)
@@ -271,26 +271,26 @@ class Generator(nn.Module):
         residual_layer_5 = self.residualLayer5(residual_layer_4)
         residual_layer_6 = self.residualLayer6(residual_layer_5)
 
-        print("Generator forward residual_layer_6: ", residual_layer_6.shape)
+        # print("Generator forward residual_layer_6: ", residual_layer_6.shape)
 
         # 1D -> 2D
         conv1dto2d_layer = self.conv1dto2dLayer(residual_layer_6)
-        print("Generator forward conv1dto2d_layer: ", conv1dto2d_layer.shape)
+        # print("Generator forward conv1dto2d_layer: ", conv1dto2d_layer.shape)
         # reshape
         reshape1dto2d = conv1dto2d_layer.unsqueeze(2)
         reshape1dto2d = reshape1dto2d.view(reshape1dto2d.size(0), 256, 9, -1)
-        print("Generator forward reshape1dto2d: ", reshape1dto2d.shape)
+        # print("Generator forward reshape1dto2d: ", reshape1dto2d.shape)
 
         # UpSample
         upsample_layer_1 = self.upSample1(reshape1dto2d)
-        print("Generator forward upsample_layer_1: ", upsample_layer_1.shape)
+        # print("Generator forward upsample_layer_1: ", upsample_layer_1.shape)
         upsample_layer_2 = self.upSample2(upsample_layer_1)
-        print("Generator forward upsample_layer_2: ", upsample_layer_2.shape)
+        # print("Generator forward upsample_layer_2: ", upsample_layer_2.shape)
 
         output = self.lastConvLayer(upsample_layer_2)
-        print("Generator forward output: ", output.shape)
+        # print("Generator forward output: ", output.shape)
         output = output.squeeze(1)
-        print("Generator forward output: ", output.shape)
+        # print("Generator forward output: ", output.shape)
         return output
 
 
