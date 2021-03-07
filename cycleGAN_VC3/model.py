@@ -375,7 +375,7 @@ if __name__ == '__main__':
     np.random.seed(0)
 
     residual_in_channels = 256
-    input = np.random.randn(1, 80, 64) 
+    input = np.random.randn(2, 80, 64) 
     input = torch.from_numpy(input).float()
     print("Generator input: ", input.shape)
     generator = Generator(input.shape[1:], residual_in_channels)
