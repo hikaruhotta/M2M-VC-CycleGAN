@@ -42,18 +42,16 @@ class CycleGANTraining(object):
         #                                         pin_memory=True)
         # self.n_samples = len(self.train_dataset)
 
-        logf0s_normalization = '/home/sofianzalouk/sofian_dataset/cache/logf0s_normalization.npz'
-        mcep_normalization = '/home/sofianzalouk/sofian_dataset/cache/mcep_normalization.npz'
-        coded_sps_A_norm = '/home/sofianzalouk/sofian_dataset/cache/coded_sps_A_norm.pickle'
-        coded_sps_B_norm = '/home/sofianzalouk/sofian_dataset/cache/coded_sps_B_norm.pickle'
+        normalized_dataset_A = '/home/data/vc3_melspec_dataset/voc_normalized.pickle'
+        normalized_dataset_B = '/home/data/vc3_melspec_dataset/coraal_normalized.pickle'
 
-        self.dataset_A = self.loadPickleFile(coded_sps_A_norm)
-        self.dataset_B = self.loadPickleFile(coded_sps_B_norm)
+        self.dataset_A = self.loadPickleFile(normalized_dataset_A)
+        self.dataset_B = self.loadPickleFile(normalized_dataset_B)
 
         self.n_samples = len(self.dataset_A)
         self.dataset = trainingDataset(datasetA=self.dataset_A,
                                     datasetB=self.dataset_B,
-                                    n_frames=128)
+                                    n_frames=64)
         self.train_dataloader = torch.utils.data.DataLoader(dataset=self.dataset,
                                                     batch_size=self.mini_batch_size,
                                                     shuffle=True,
@@ -132,10 +130,10 @@ class CycleGANTraining(object):
                     self.adjust_lr_rate(
                         self.generator_optimizer, name='discriminator')
                 
-                # real_A = real_A.to(self.device, dtype=torch.float)
-                # real_B = real_B.to(self.device, dtype=torch.float)
-                real_A = torch.rand(2, 80, 64).to(self.device, dtype=torch.float)
-                real_B = torch.rand(2, 80, 64).to(self.device, dtype=torch.float)
+                real_A = real_A.to(self.device, dtype=torch.float)
+                real_B = real_B.to(self.device, dtype=torch.float)
+                # real_A = torch.rand(2, 80, 64).to(self.device, dtype=torch.float)
+                # real_B = torch.rand(2, 80, 64).to(self.device, dtype=torch.float)
 
                 # Train Generator
                 fake_B = self.generator_A2B(real_A)
