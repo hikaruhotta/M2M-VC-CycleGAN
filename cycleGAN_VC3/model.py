@@ -298,36 +298,36 @@ class Generator(nn.Module):
         residual_layer_5 = self.residualLayer5(residual_layer_4)
         residual_layer_6 = self.residualLayer6(residual_layer_5)
 
-        # print("Generator forward residual_layer_6: ", residual_layer_6.shape)
+        print("Generator forward residual_layer_6: ", residual_layer_6.shape)
 
         # 1D -> 2D
         conv1dto2d_layer = self.conv1dto2dLayer(residual_layer_6)
-        # print("Generator forward conv1dto2d_layer: ", conv1dto2d_layer.shape)
+        print("Generator forward conv1dto2d_layer: ", conv1dto2d_layer.shape)
 
         conv1dto2d_layer = self.conv1dto2dLayer_tfan(conv1dto2d_layer, seg_1d)
 
         # reshape
         reshape1dto2d = conv1dto2d_layer.unsqueeze(2)
-        reshape1dto2d = reshape1dto2d.view(reshape1dto2d.size(0), 256, 9, -1)
-        # print("Generator forward reshape1dto2d: ", reshape1dto2d.shape)
+        reshape1dto2d = reshape1dto2d.view(reshape1dto2d.size(0), 256, 20, -1)
+        print("Generator forward reshape1dto2d: ", reshape1dto2d.shape)
 
         seg_2d = reshape1dto2d
 
         # UpSample
         upsample_layer_1 = self.upSample1(reshape1dto2d)
-        # print("Generator forward upsample_layer_1: ", upsample_layer_1.shape)
+        print("Generator forward upsample_layer_1: ", upsample_layer_1.shape)
         upsample_layer_1 = self.upSample1_tfan(upsample_layer_1, seg_2d)
         upsample_layer_1 = self.glu(upsample_layer_1)
 
         upsample_layer_2 = self.upSample2(upsample_layer_1)
-        # print("Generator forward upsample_layer_2: ", upsample_layer_2.shape)
+        print("Generator forward upsample_layer_2: ", upsample_layer_2.shape)
         upsample_layer_2 = self.upSample2_tfan(upsample_layer_2, seg_2d)
         upsample_layer_2 = self.glu(upsample_layer_2)
 
         output = self.lastConvLayer(upsample_layer_2)
-        # print("Generator forward output: ", output.shape)
+        print("Generator forward output: ", output.shape)
         output = output.squeeze(1)
-        # print("Generator forward output: ", output.shape)
+        print("Generator forward output: ", output.shape)
         return output
 
 

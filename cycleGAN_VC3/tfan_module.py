@@ -56,6 +56,7 @@ class TFAN_1D(nn.Module):
             nn.Conv1d(label_nc, nhidden, kernel_size=ks, padding=pw),
             nn.ReLU()
         )
+        print("norm_nc: ", norm_nc)
         self.mlp_gamma = nn.Conv1d(nhidden, norm_nc, kernel_size=ks, padding=pw)
         self.mlp_beta = nn.Conv1d(nhidden, norm_nc, kernel_size=ks, padding=pw)
 
@@ -68,22 +69,29 @@ class TFAN_1D(nn.Module):
         # Part 2. produce scaling and bias conditioned on semantic map
         tx = list(segmap.shape)
         tx[-1] = x.size()[2]
+        tx[-2] = 128
         tx = tuple(tx)
         segmap = F.interpolate(segmap, size=tx[2:], mode='nearest')
+        segmap = segmap.squeeze(1)
         print(segmap.shape)
 
         # actv = self.mlp_shared(segmap)
         temp = segmap
         for i in range(self.repeat_N):
             temp = self.mlp_shared(temp)
+            
         actv = temp
+        
+        print("actv: ", actv.shape)
 
         gamma = self.mlp_gamma(actv)
+        print("gamma: ", gamma.shape)
         beta = self.mlp_beta(actv)
+        print("beta: ", beta.shape)
 
         # apply scale and bias
         out = normalized * (1 + gamma) + beta
-
+        print(out.shape)
         return out
 
 
@@ -113,6 +121,9 @@ class TFAN_2D(nn.Module):
         # Part 1. generate parameter-free normalized activations
         normalized = self.param_free_norm(x)
 
+        print("normalized: ", normalized.shape)
+        print(segmap.shape)
+        print(x.shape)
         # Part 2. produce scaling and bias conditioned on semantic map
         segmap = F.interpolate(segmap, size=x.size()[2:], mode='nearest')
 
