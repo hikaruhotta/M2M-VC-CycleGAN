@@ -219,7 +219,7 @@ class Generator(nn.Module):
 
     def forward(self, x):
         # GLU
-        # print("Generator forward input: ", input.shape)
+        # print("Generator forward input: ", x.shape)
         x = x.unsqueeze(1)
         # print("Generator forward input: ", input.shape)
 
