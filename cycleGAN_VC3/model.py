@@ -32,25 +32,6 @@ class ResidualLayer(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, stride, padding):
         super(ResidualLayer, self).__init__()
 
-        # self.residualLayer = nn.Sequential(nn.Conv1d(in_channels=in_channels,
-        #                                              out_channels=out_channels,
-        #                                              kernel_size=kernel_size,
-        #                                              stride=1,
-        #                                              padding=padding),
-        #                                    nn.InstanceNorm1d(
-        #                                        num_features=out_channels,
-        #                                        affine=True),
-        #                                    GLU(),
-        #                                    nn.Conv1d(in_channels=out_channels,
-        #                                              out_channels=in_channels,
-        #                                              kernel_size=kernel_size,
-        #                                              stride=1,
-        #                                              padding=padding),
-        #                                    nn.InstanceNorm1d(
-        #                                        num_features=in_channels,
-        #                                        affine=True)
-        #                                    )
-
         self.conv1d_layer = nn.Sequential(nn.Conv1d(in_channels=in_channels,
                                                     out_channels=out_channels,
                                                     kernel_size=kernel_size,
@@ -113,18 +94,18 @@ class downSample_Generator(nn.Module):
 
 ##########################################################################################
 class Generator(nn.Module):
-    def __init__(self, input_shape=(1, 80, 64), residual_in_channels=256):
+    def __init__(self, input_shape=(80, 64), residual_in_channels=256):
         super(Generator, self).__init__()
-
-        self.flattened_channels = (input_shape[1] // 4) * residual_in_channels
+        Cx, Tx = input_shape
+        self.flattened_channels = (Cx // 4) * residual_in_channels
         # 2D Conv Layer
-        self.conv1 = nn.Conv2d(in_channels=1,  # TODO 1 ?
+        self.conv1 = nn.Conv2d(in_channels=1,
                                out_channels=residual_in_channels // 2,
                                kernel_size=(5, 15),
                                stride=(1, 1),
                                padding=(2, 7))
 
-        self.conv1_gates = nn.Conv2d(in_channels=1,  # TODO 1 ?
+        self.conv1_gates = nn.Conv2d(in_channels=1,
                                      out_channels=residual_in_channels // 2,
                                      kernel_size=(5, 15),
                                      stride=1,
@@ -144,20 +125,12 @@ class Generator(nn.Module):
                                                 padding=2)
 
         # 2D -> 1D Conv
-        # self.conv2dto1dLayer = nn.Sequential(nn.Conv1d(in_channels=2304,
-        #                                                out_channels=256,
-        #                                                kernel_size=1,
-        #                                                stride=1,
-        #                                                padding=0),
-        #                                      nn.InstanceNorm1d(num_features=256,
-        #                                                        affine=True))
-
         self.conv2dto1dLayer = nn.Conv1d(in_channels=self.flattened_channels,
                                          out_channels=residual_in_channels,
                                          kernel_size=1,
                                          stride=1,
                                          padding=0)
-        self.conv2dto1dLayer_tfan = TFAN_1D(256)
+        self.conv2dto1dLayer_tfan = TFAN_1D(residual_in_channels)
 
         # Residual Blocks
         self.residualLayer1 = ResidualLayer(in_channels=residual_in_channels,
@@ -192,14 +165,6 @@ class Generator(nn.Module):
                                             padding=1)
 
         # 1D -> 2D Conv
-        # self.conv1dto2dLayer = nn.Sequential(nn.Conv1d(in_channels=256,
-        #                                                out_channels=2304,
-        #                                                kernel_size=1,
-        #                                                stride=1,
-        #                                                padding=0),
-        #                                      nn.InstanceNorm1d(num_features=2304,
-        #                                                        affine=True))
-
         self.conv1dto2dLayer = nn.Conv1d(in_channels=residual_in_channels,
                                          out_channels=self.flattened_channels,
                                          kernel_size=1,
@@ -209,22 +174,22 @@ class Generator(nn.Module):
 
         # UpSample Layer
         self.upSample1 = self.upSample(in_channels=residual_in_channels,
-                                       out_channels=1024,
+                                       out_channels=residual_in_channels * 4,
                                        kernel_size=5,
                                        stride=1,
                                        padding=2)
 
-        self.upSample1_tfan = TFAN_2D(1024 // 4)
+        self.upSample1_tfan = TFAN_2D(residual_in_channels)
         self.glu = GLU()
 
-        self.upSample2 = self.upSample(in_channels=256,
-                                       out_channels=512,
+        self.upSample2 = self.upSample(in_channels=residual_in_channels,
+                                       out_channels=residual_in_channels * 2,
                                        kernel_size=5,
                                        stride=1,
                                        padding=2)
-        self.upSample2_tfan = TFAN_2D(512 // 4)
+        self.upSample2_tfan = TFAN_2D(residual_in_channels // 2)
 
-        self.lastConvLayer = nn.Conv2d(in_channels=128,
+        self.lastConvLayer = nn.Conv2d(in_channels=residual_in_channels // 2,
                                        out_channels=1,
                                        kernel_size=(5, 15),
                                        stride=(1, 1),
@@ -243,19 +208,6 @@ class Generator(nn.Module):
 
         return self.ConvLayer
 
-    # def upSample(self, in_channels, out_channels, kernel_size, stride, padding):
-    #     self.convLayer = nn.Sequential(nn.Conv2d(in_channels=in_channels,
-    #                                              out_channels=out_channels,
-    #                                              kernel_size=kernel_size,
-    #                                              stride=stride,
-    #                                              padding=padding),
-    #                                    nn.PixelShuffle(upscale_factor=2),
-    #                                    nn.InstanceNorm2d(
-    #                                        num_features=out_channels // 4,
-    #                                        affine=True),
-    #                                    GLU())
-    #     return self.convLayer
-
     def upSample(self, in_channels, out_channels, kernel_size, stride, padding):
         self.convLayer = nn.Sequential(nn.Conv2d(in_channels=in_channels,
                                                  out_channels=out_channels,
@@ -265,31 +217,30 @@ class Generator(nn.Module):
                                        nn.PixelShuffle(upscale_factor=2))
         return self.convLayer
 
-    def forward(self, input):
+    def forward(self, x):
         # GLU
-        print("Generator forward input: ", input.shape)
-        input = input.unsqueeze(1)
-        print("Generator forward input: ", input.shape)
-        seg_1d = input  # for TFAN module
+        # print("Generator forward input: ", input.shape)
+        x = x.unsqueeze(1)
+        # print("Generator forward input: ", input.shape)
 
-        conv1 = self.conv1(input) * torch.sigmoid(self.conv1_gates(input))
-        print("Generator forward conv1: ", conv1.shape)
+        conv1 = self.conv1(x) * torch.sigmoid(self.conv1_gates(x))
+        # print("Generator forward conv1: ", conv1.shape)
 
         # DownloadSample
         downsample1 = self.downSample1(conv1)
-        print("Generator forward downsample1: ", downsample1.shape)
+        # print("Generator forward downsample1: ", downsample1.shape)
         downsample2 = self.downSample2(downsample1)
-        print("Generator forward downsample2: ", downsample2.shape)
+        # print("Generator forward downsample2: ", downsample2.shape)
 
         # 2D -> 1D
         # reshape
         reshape2dto1d = downsample2.view(downsample2.size(0), self.flattened_channels , 1, -1)
         reshape2dto1d = reshape2dto1d.squeeze(2)
-        print("Generator forward reshape2dto1d: ", reshape2dto1d.shape)
+        # print("Generator forward reshape2dto1d: ", reshape2dto1d.shape)
         conv2dto1d_layer = self.conv2dto1dLayer(reshape2dto1d)
-        print("Generator forward conv2dto1d_layer: ", conv2dto1d_layer.shape)
-        conv2dto1d_layer = self.conv2dto1dLayer_tfan(conv2dto1d_layer, seg_1d)
-        print("Generator forward conv2dto1d_layer_tfan: ", conv2dto1d_layer.shape)
+        # print("Generator forward conv2dto1d_layer: ", conv2dto1d_layer.shape)
+        conv2dto1d_layer = self.conv2dto1dLayer_tfan(conv2dto1d_layer, x)
+        # print("Generator forward conv2dto1d_layer_tfan: ", conv2dto1d_layer.shape)
 
         residual_layer_1 = self.residualLayer1(conv2dto1d_layer)
         residual_layer_2 = self.residualLayer2(residual_layer_1)
@@ -298,81 +249,77 @@ class Generator(nn.Module):
         residual_layer_5 = self.residualLayer5(residual_layer_4)
         residual_layer_6 = self.residualLayer6(residual_layer_5)
 
-        print("Generator forward residual_layer_6: ", residual_layer_6.shape)
+        # print("Generator forward residual_layer_6: ", residual_layer_6.shape)
 
         # 1D -> 2D
         conv1dto2d_layer = self.conv1dto2dLayer(residual_layer_6)
-        print("Generator forward conv1dto2d_layer: ", conv1dto2d_layer.shape)
+        # print("Generator forward conv1dto2d_layer: ", conv1dto2d_layer.shape)
+        conv1dto2d_layer = self.conv1dto2dLayer_tfan(conv1dto2d_layer, x)
 
-        conv1dto2d_layer = self.conv1dto2dLayer_tfan(conv1dto2d_layer, seg_1d)
-
-        # reshape
+        # Reshape
         reshape1dto2d = conv1dto2d_layer.unsqueeze(2)
         reshape1dto2d = reshape1dto2d.view(reshape1dto2d.size(0), 256, 20, -1)
-        print("Generator forward reshape1dto2d: ", reshape1dto2d.shape)
-
-        seg_2d = input
-        print("seg_2d:", seg_2d.shape)
+        # print("Generator forward reshape1dto2d: ", reshape1dto2d.shape)
 
         # UpSample
         upsample_layer_1 = self.upSample1(reshape1dto2d)
-        print("Generator forward upsample_layer_1: ", upsample_layer_1.shape)
-        upsample_layer_1 = self.upSample1_tfan(upsample_layer_1, seg_2d)
-        print("Generator forward upsample_layer_1: ", upsample_layer_1.shape)
+        # print("Generator forward upsample_layer_1: ", upsample_layer_1.shape)
+        upsample_layer_1 = self.upSample1_tfan(upsample_layer_1, x)
+        # print("Generator forward upsample_layer_1: ", upsample_layer_1.shape)
         upsample_layer_1 = self.glu(upsample_layer_1)
 
         upsample_layer_2 = self.upSample2(upsample_layer_1)
-        print("Generator forward upsample_layer_2: ", upsample_layer_2.shape)
-        upsample_layer_2 = self.upSample2_tfan(upsample_layer_2, seg_2d)
+        # print("Generator forward upsample_layer_2: ", upsample_layer_2.shape)
+        upsample_layer_2 = self.upSample2_tfan(upsample_layer_2, x)
         upsample_layer_2 = self.glu(upsample_layer_2)
 
         output = self.lastConvLayer(upsample_layer_2)
-        print("Generator forward output: ", output.shape)
+        # print("Generator forward output: ", output.shape)
         output = output.squeeze(1)
-        print("Generator forward output: ", output.shape)
+        # print("Generator forward output: ", output.shape)
         return output
 
 
 ##########################################################################################
 # 鉴别器  PatchGAN
 class Discriminator(nn.Module):
-    def __init__(self):
+    def __init__(self, input_shape=(80, 64), residual_in_channels=256):
         super(Discriminator, self).__init__()
 
         self.convLayer1 = nn.Sequential(nn.Conv2d(in_channels=1,
-                                                  out_channels=128,
+                                                  out_channels=residual_in_channels // 2,
                                                   kernel_size=(3, 3),
                                                   stride=(1, 1),
                                                   padding=(1, 1)),
                                         GLU())
 
         # DownSample Layer
-        self.downSample1 = self.downSample(in_channels=128,
-                                           out_channels=256,
+        self.downSample1 = self.downSample(in_channels=residual_in_channels // 2,
+                                           out_channels=residual_in_channels,
                                            kernel_size=(3, 3),
                                            stride=(2, 2),
                                            padding=1)
 
-        self.downSample2 = self.downSample(in_channels=256,
-                                           out_channels=512,
+        self.downSample2 = self.downSample(in_channels=residual_in_channels,
+                                           out_channels=residual_in_channels * 2,
                                            kernel_size=(3, 3),
                                            stride=[2, 2],
                                            padding=1)
 
-        self.downSample3 = self.downSample(in_channels=512,
-                                           out_channels=1024,
+        self.downSample3 = self.downSample(in_channels=residual_in_channels * 2,
+                                           out_channels=residual_in_channels * 4,
                                            kernel_size=[3, 3],
                                            stride=[2, 2],
                                            padding=1)
 
-        self.downSample4 = self.downSample(in_channels=1024,
-                                           out_channels=1024,
-                                           kernel_size=[1, 10],  # [1, 5] for cyclegan-vc2
+        self.downSample4 = self.downSample(in_channels=residual_in_channels * 4,
+                                           out_channels=residual_in_channels * 4,
+                                           kernel_size=[1, 10],
                                            stride=(1, 1),
                                            padding=(0, 2))
 
         # Conv Layer
-        self.outputConvLayer = nn.Sequential(nn.Conv2d(in_channels=1024,
+        self.outputConvLayer = nn.Sequential(nn.Conv2d(in_channels=residual_in_channels * 4,
                                                        out_channels=1,
                                                        kernel_size=(1, 3),
                                                        stride=[1, 1],
@@ -396,17 +343,13 @@ class Discriminator(nn.Module):
         # print("Discriminator forward input: ", input.shape)
         conv_layer_1 = self.convLayer1(input)
         # print("Discriminator forward conv_layer_1: ", conv_layer_1.shape)
-
         downsample1 = self.downSample1(conv_layer_1)
         # print("Discriminator forward downsample1: ", downsample1.shape)
         downsample2 = self.downSample2(downsample1)
         # print("Discriminator forward downsample2: ", downsample2.shape)
         downsample3 = self.downSample3(downsample2)
         # print("Discriminator forward downsample3: ", downsample3.shape)
-
-        # downsample3 = downsample3.contiguous().permute(0, 2, 3, 1).contiguous()
         # print("Discriminator forward downsample3: ", downsample3.shape)
-
         output = torch.sigmoid(self.outputConvLayer(downsample3))
         # print("Discriminator forward output: ", output.shape)
         return output
@@ -429,18 +372,18 @@ if __name__ == '__main__':
         sys.exit(0)
 
     # Generator Dimensionality Testing
-    input = torch.randn(10, 36, 1100)  # (N, C_in, Width) For Conv1d
     np.random.seed(0)
 
+    residual_in_channels = 256
     input = np.random.randn(1, 80, 64) 
     input = torch.from_numpy(input).float()
     print("Generator input: ", input.shape)
-    generator = Generator()
+    generator = Generator(input.shape[1:], residual_in_channels)
     output = generator(input)
     print("Generator output shape: ", output.shape)
 
     # Discriminator Dimensionality Testing
     # input = torch.randn(32, 1, 24, 128)  # (N, C_in, height, width) For Conv2d
-    discriminator = Discriminator()
+    discriminator = Discriminator(input.shape[1:], residual_in_channels)
     output = discriminator(output)
     print("Discriminator output shape ", output.shape)
