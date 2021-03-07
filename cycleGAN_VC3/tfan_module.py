@@ -35,9 +35,9 @@ class TFAN_1D(nn.Module):
         # print(segmap.shape, x.shape)
 
         # Step 2. Generate scale and bias conditioned on semantic map
-        Bx, _, Cx, Tx = segmap.shape
-        Bx, Cf, Tf = x.shape
-        segmap = F.interpolate(segmap, size=(Cx, Tf), mode='nearest')
+        Bx, _, Qx, Tx = segmap.shape
+        Bx, Qf, Tf = x.shape
+        segmap = F.interpolate(segmap, size=(Qx, Tf), mode='nearest')
         segmap = segmap.squeeze(1)
         # print(segmap.shape)
 
