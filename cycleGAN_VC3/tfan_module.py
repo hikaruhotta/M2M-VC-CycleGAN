@@ -53,7 +53,11 @@ class TFAN_1D(nn.Module):
         pw = ks // 2
 
         self.mlp_shared = nn.Sequential(
-            nn.Conv1d(label_nc, nhidden, kernel_size=ks, padding=pw),
+            nn.Conv1d(80, nhidden, kernel_size=ks, padding=pw),
+            nn.ReLU(),
+            nn.Conv1d(nhidden, nhidden, kernel_size=ks, padding=pw),
+            nn.ReLU(),
+            nn.Conv1d(nhidden, nhidden, kernel_size=ks, padding=pw),
             nn.ReLU()
         )
         print("norm_nc: ", norm_nc)
@@ -67,18 +71,18 @@ class TFAN_1D(nn.Module):
         print("Before TFAN interpolation")
         print(segmap.shape, x.shape)
         # Part 2. produce scaling and bias conditioned on semantic map
-        tx = list(segmap.shape)
-        tx[-1] = x.size()[2]
-        tx[-2] = 128
-        tx = tuple(tx)
-        segmap = F.interpolate(segmap, size=tx[2:], mode='nearest')
+        resize_shape = list(segmap.shape)
+        resize_shape[-1] = x.size()[2]
+        # resize_shape[-2] = 128
+        resize_shape = tuple(resize_shape)
+        segmap = F.interpolate(segmap, size=resize_shape[2:], mode='nearest')
         segmap = segmap.squeeze(1)
         print(segmap.shape)
 
         # actv = self.mlp_shared(segmap)
         temp = segmap
-        for i in range(self.repeat_N):
-            temp = self.mlp_shared(temp)
+        # for i in range(self.repeat_N):
+        temp = self.mlp_shared(temp)
             
         actv = temp
         
@@ -110,8 +114,13 @@ class TFAN_2D(nn.Module):
         nhidden = 128
 
         pw = ks // 2
+        
         self.mlp_shared = nn.Sequential(
-            nn.Conv2d(label_nc, nhidden, kernel_size=ks, padding=pw),
+            nn.Conv2d(1, nhidden, kernel_size=ks, padding=pw),
+            nn.ReLU(),
+            nn.Conv2d(nhidden, nhidden, kernel_size=ks, padding=pw),
+            nn.ReLU(),
+            nn.Conv2d(nhidden, nhidden, kernel_size=ks, padding=pw),
             nn.ReLU()
         )
         self.mlp_gamma = nn.Conv2d(nhidden, norm_nc, kernel_size=ks, padding=pw)
@@ -124,13 +133,17 @@ class TFAN_2D(nn.Module):
         print("normalized: ", normalized.shape)
         print(segmap.shape)
         print(x.shape)
+        resize_shape = list(segmap.shape)
+        resize_shape[-2] = x.shape[2]
+        resize_shape[-1] = x.shape[-1]
+        resize_shape = tuple(resize_shape)
         # Part 2. produce scaling and bias conditioned on semantic map
-        segmap = F.interpolate(segmap, size=x.size()[2:], mode='nearest')
-
+        segmap = F.interpolate(segmap, size=resize_shape[2:], mode='nearest')
+        print("shape after interpolate: ", segmap.shape)
         # actv = self.mlp_shared(segmap)
         temp = segmap
-        for i in range(self.repeat_N):
-            temp = self.mlp_shared(temp)
+        # for i in range(self.repeat_N):
+        temp = self.mlp_shared(temp)
         actv = temp
 
         gamma = self.mlp_gamma(actv)

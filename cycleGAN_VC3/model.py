@@ -311,12 +311,14 @@ class Generator(nn.Module):
         reshape1dto2d = reshape1dto2d.view(reshape1dto2d.size(0), 256, 20, -1)
         print("Generator forward reshape1dto2d: ", reshape1dto2d.shape)
 
-        seg_2d = reshape1dto2d
+        seg_2d = input
+        print("seg_2d:", seg_2d.shape)
 
         # UpSample
         upsample_layer_1 = self.upSample1(reshape1dto2d)
         print("Generator forward upsample_layer_1: ", upsample_layer_1.shape)
         upsample_layer_1 = self.upSample1_tfan(upsample_layer_1, seg_2d)
+        print("Generator forward upsample_layer_1: ", upsample_layer_1.shape)
         upsample_layer_1 = self.glu(upsample_layer_1)
 
         upsample_layer_2 = self.upSample2(upsample_layer_1)
