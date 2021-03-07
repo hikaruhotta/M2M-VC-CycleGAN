@@ -1,7 +1,7 @@
-"""
-TFAN module for CycleGAN VC3.
-Adapated from https://github.com/jackaduma/CycleGAN-VC3/blob/main/tfan_module.py
-"""
+#! python
+# -*- coding: utf-8 -*-
+# Author: kun
+# @Time: 2020-11-17 14:35
 
 import re
 import torch
@@ -63,8 +63,14 @@ class TFAN_1D(nn.Module):
         # Part 1. generate parameter-free normalized activations
         normalized = self.param_free_norm(x)
 
+        print("Before TFAN interpolation")
+        print(segmap.shape, x.shape)
         # Part 2. produce scaling and bias conditioned on semantic map
-        segmap = F.interpolate(segmap, size=x.size()[2:], mode='nearest')
+        tx = list(segmap.shape)
+        tx[-1] = x.size()[2]
+        tx = tuple(tx)
+        segmap = F.interpolate(segmap, size=tx[2:], mode='nearest')
+        print(segmap.shape)
 
         # actv = self.mlp_shared(segmap)
         temp = segmap
