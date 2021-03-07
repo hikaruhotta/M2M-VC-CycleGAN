@@ -1,6 +1,6 @@
 import torch.nn as nn
 import torch
-from tfan_module import TFAN_1D, TFAN_2D
+from cycleGAN_VC3.tfan_module import TFAN_1D, TFAN_2D
 
 
 class GLU(nn.Module):
@@ -383,7 +383,6 @@ if __name__ == '__main__':
     print("Generator output shape: ", output.shape)
 
     # Discriminator Dimensionality Testing
-    # input = torch.randn(32, 1, 24, 128)  # (N, C_in, height, width) For Conv2d
     discriminator = Discriminator(input.shape[1:], residual_in_channels)
     output = discriminator(output)
     print("Discriminator output shape ", output.shape)
