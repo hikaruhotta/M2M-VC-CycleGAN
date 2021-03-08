@@ -23,6 +23,4 @@ class TrainArgParser(BaseArgParser):
             '--decay_after', type=float, default=1e4, help='Learning rate.')
 
         self.parser.add_argument('--max_ckpts', type=int, default=3, help='Max ckpts to save.')
-        self.parser.add_argument('--epochs_per_save', type=int, default=1,
-                                 help='Number of epochs between saving a checkpoint to save_dir.')
         self.parser.add_argument('--continue_train', action='store_true', help='continue training: load the latest model')

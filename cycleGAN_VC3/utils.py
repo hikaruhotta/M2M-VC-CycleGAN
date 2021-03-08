@@ -10,6 +10,9 @@ import torch.nn as nn
 import torchaudio
 from torchvision.transforms import ToTensor
 
+import librosa
+import librosa.display
+
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -119,8 +122,26 @@ def get_waveform_fig(waveform, sample_rate, title="Waveform", xlim=None, ylim=No
     buf = io.BytesIO()
     plt.savefig(buf, format='jpeg')
     buf.seek(0)
-    
+        
     image = Image.open(buf)
     image = ToTensor()(image)
     
+    plt.close(figure)
+    
+    return image
+
+def get_mel_spectrogram_fig(spec, title="Mel-Spectrogram"):
+    figure, ax = plt.subplots()
+    canvas = FigureCanvas(figure)
+    S_db = librosa.power_to_db(10**spec.numpy().squeeze(), ref=np.max)
+    img = librosa.display.specshow(S_db, ax=ax, y_axis='log', x_axis='time')
+    
+    buf = io.BytesIO()
+    plt.savefig(buf, format='jpeg')
+    buf.seek(0)
+        
+    image = Image.open(buf)
+    image = ToTensor()(image)
+    
+    plt.close(figure)
     return image

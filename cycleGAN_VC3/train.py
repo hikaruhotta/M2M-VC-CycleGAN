@@ -9,7 +9,7 @@ from cycleGAN_VC3.model import Generator, Discriminator
 from args.cycleGAN_train_arg_parser import CycleGANTrainArgParser
 from dataset.dataset import Dataset
 from dataset.vc_dataset import trainingDataset
-from cycleGAN_VC3.utils import get_audio_transforms, data_processing, decode_melspectrogram, get_img_from_fig, get_waveform_fig
+from cycleGAN_VC3.utils import get_audio_transforms, data_processing, decode_melspectrogram, get_img_from_fig, get_waveform_fig, get_mel_spectrogram_fig
 from logger.train_logger import TrainLogger
 from saver.model_saver import ModelSaver
 
@@ -27,6 +27,8 @@ class CycleGANTraining(object):
         self.cycle_loss_lambda = args.cycle_loss_lambda
         self.identity_loss_lambda = args.identity_loss_lambda
         self.device = args.device
+        self.epochs_per_save = args.epochs_per_save
+        self.epochs_per_plot = args.epochs_per_plot
         
         self.vocoder = torch.hub.load('descriptinc/melgan-neurips', 'load_melgan')
         self.sample_rate = args.sample_rate
@@ -69,7 +71,12 @@ class CycleGANTraining(object):
         self.discriminator_optimizer = torch.optim.Adam(
             d_params, lr=self.discriminator_lr, betas=(0.5, 0.999))
 
-        # Storing Discriminatior and Generator Loss
+        # Load from previous ckpt
+        if args.continue_train:
+            self.saver.load_model(self.generator_A2B, "generator_A2B", None, self.generator_optimizer)
+            self.saver.load_model(self.generator_B2A, "generator_B2A", None, None)
+            self.saver.load_model(self.generator_A2B, "discriminator_A", None, self.discriminator_optimizer)
+            self.saver.load_model(self.generator_A2B, "discriminator_B", None, None)
 
     def adjust_lr_rate(self, optimizer, name='generator'):
         if name == 'generator':
@@ -193,13 +200,45 @@ class CycleGANTraining(object):
                         self.generator_optimizer, name='generator')
                     self.adjust_lr_rate(
                         self.generator_optimizer, name='discriminator')
+                break
             
-            wav_A = decode_melspectrogram(self.vocoder, generated_A[0].detach().cpu(), self.dataset_A_mean, self.dataset_A_std).cpu()
-            wav_A_fig = get_waveform_fig(wav_A, self.sample_rate)
-            wav_B = decode_melspectrogram(self.vocoder, generated_B[0].detach().cpu().numpy(), self.dataset_B_mean, self.dataset_B_std)
-            self.logger.log_img(wav_A_fig, "debug")
-            # generated_A.shape, generated_B.shape
+            if self.logger.epoch % self.epochs_per_plot == 0:
+                # Log spectrograms
+                real_mel_A_fig = get_mel_spectrogram_fig(real_A[0].detach().cpu())
+                fake_mel_A_fig = get_mel_spectrogram_fig(generated_A[0].detach().cpu())
+                real_mel_B_fig = get_mel_spectrogram_fig(real_B[0].detach().cpu())
+                fake_mel_B_fig = get_mel_spectrogram_fig(generated_B[0].detach().cpu())
+                self.logger.visualize_outputs({"real_voc_spec": real_mel_A_fig, "fake_voc_spec": fake_mel_A_fig,
+                                            "real_coraal_spec": real_mel_B_fig, "fake_coraal_spec": fake_mel_B_fig})
+
+                # Decode spec->wav
+                real_wav_A = decode_melspectrogram(self.vocoder, real_A[0].detach().cpu(), self.dataset_A_mean, self.dataset_A_std).cpu()
+                fake_wav_A = decode_melspectrogram(self.vocoder, generated_A[0].detach().cpu(), self.dataset_A_mean, self.dataset_A_std).cpu()
+                real_wav_B = decode_melspectrogram(self.vocoder, real_B[0].detach().cpu().numpy(), self.dataset_B_mean, self.dataset_B_std).cpu()
+                fake_wav_B = decode_melspectrogram(self.vocoder, generated_B[0].detach().cpu().numpy(), self.dataset_B_mean, self.dataset_B_std).cpu()
+                
+                # Log wav
+                real_wav_A_fig = get_waveform_fig(real_wav_A, self.sample_rate)
+                fake_wav_A_fig = get_waveform_fig(fake_wav_A, self.sample_rate)
+                # self.logger.log_img(wav_A_fig, "fake_voc_wav")
+                real_wav_B_fig = get_waveform_fig(real_wav_B, self.sample_rate)
+                fake_wav_B_fig = get_waveform_fig(fake_wav_B, self.sample_rate)
+                self.logger.visualize_outputs({"real_voc_wav": real_wav_A_fig, "fake_voc_wav": fake_wav_A_fig,
+                                            "real_coraal_wav": real_wav_B_fig, "fake_coraal_wav": fake_wav_B_fig})
+                # self.logger.log_img(wav_B_fig, "fake_coraal_wav")
+                
+                # Log wav as audio
+                self.logger.log_audio(real_wav_A.T, "real_voc_audio")
+                self.logger.log_audio(fake_wav_A.T, "fake_voc_audio")
+                self.logger.log_audio(real_wav_B.T, "real_coraal_audio")
+                self.logger.log_audio(fake_wav_B.T, "fake_coraal_audio")
             
+            if self.logger.epoch % self.epochs_per_save == 0:
+                self.saver.save(self.logger.epoch, self.generator_A2B, self.generator_optimizer, None, args.device, "generator_A2B")
+                self.saver.save(self.logger.epoch, self.generator_B2A, self.generator_optimizer, None, args.device, "generator_B2A")
+                self.saver.save(self.logger.epoch, self.discriminator_A, self.discriminator_optimizer, None, args.device, "discriminator_A")
+                self.saver.save(self.logger.epoch, self.discriminator_B, self.discriminator_optimizer, None, args.device, "discriminator_B")
+
             self.logger.end_epoch()
 
 

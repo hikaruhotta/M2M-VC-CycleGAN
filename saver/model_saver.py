@@ -88,7 +88,7 @@ class ModelSaver(object):
             'model_class': model_class,
             'model_state': model_state,
             'optimizer': optimizer.state_dict(),
-            'lr_scheduler': lr_scheduler.state_dict(),
+            'lr_scheduler': lr_scheduler.state_dict() if lr_scheduler is not None else None,
         }
 
         # Save metric value in checkpoint info
