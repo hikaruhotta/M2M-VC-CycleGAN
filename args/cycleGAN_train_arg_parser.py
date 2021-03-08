@@ -15,6 +15,15 @@ class CycleGANTrainArgParser(TrainArgParser):
     def __init__(self):
         super(CycleGANTrainArgParser, self).__init__()
 
+        self.parser.add_argument('--sample_rate', type=int, default=22050, help='Sampling rate of mel-spectrograms.')
+        self.parser.add_argument(
+            '--normalized_dataset_A_path', type=str, default=None, help='Path to pickle file containing normalized dataset A.')
+        self.parser.add_argument(
+            '--normalized_dataset_B_path', type=str, default=None, help='Path to pickle file containing normalized dataset A.')
+        self.parser.add_argument(
+            '--norm_stats_A_path', type=str, default=None, help='Path to npz file containing dataset A normalization stats')
+        self.parser.add_argument(
+            '--norm_stats_B_path', type=str, default=None, help='Path to npz file containing dataset B normalization stats')
         self.parser.add_argument(
             '--source_id', type=str, default="28", help='Source speaker id (From VOC dataset).')
         self.parser.add_argument(
@@ -32,4 +41,4 @@ class CycleGANTrainArgParser(TrainArgParser):
         self.parser.add_argument(
             '--identity_loss_lambda', type=float, default=5, help='Lambda value for identity loss.')
         
-        self.parser.set_defaults(batch_size=1, num_epochs=200000, decay_after=10000, start_epoch=1, steps_per_print=100, )
+        self.parser.set_defaults(batch_size=1, num_epochs=50, decay_after=1e4, start_epoch=1, steps_per_print=100, )
