@@ -20,7 +20,7 @@ class TrainArgParser(BaseArgParser):
         self.parser.add_argument(
             '--lr', type=float, default=5e-4, help='Learning rate.')
         self.parser.add_argument(
-            '--decay_after', type=float, default=100000, help='Learning rate.')
+            '--decay_after', type=float, default=1e4, help='Learning rate.')
 
         self.parser.add_argument('--max_ckpts', type=int, default=3, help='Max ckpts to save.')
         self.parser.add_argument('--epochs_per_save', type=int, default=1,

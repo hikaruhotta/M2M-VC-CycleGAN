@@ -133,8 +133,8 @@ def buildTrainset(source_path, target_path, cache_folder='./cache/'):
         os.makedirs(cache_folder)
 
     np.savez(os.path.join(cache_folder, 'norm_stat_voc.npz'),
-            mean_A=mel_mean_A,
-            std_A=mel_std_A)
+            mean=mel_mean_A,
+            std=mel_std_A)
     
     np.savez(os.path.join(cache_folder, 'norm_stat_coraal.npz'),
             mean=mel_mean_B,

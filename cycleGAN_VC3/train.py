@@ -1,3 +1,4 @@
+import numpy as np
 from tqdm import tqdm
 
 import torch
@@ -8,7 +9,7 @@ from cycleGAN_VC3.model import Generator, Discriminator
 from args.cycleGAN_train_arg_parser import CycleGANTrainArgParser
 from dataset.dataset import Dataset
 from dataset.vc_dataset import trainingDataset
-from cycleGAN_VC3.utils import get_audio_transforms, data_processing
+from cycleGAN_VC3.utils import get_audio_transforms, data_processing, decode_melspectrogram, get_img_from_fig, get_waveform_fig
 from logger.train_logger import TrainLogger
 from saver.model_saver import ModelSaver
 
@@ -26,27 +27,18 @@ class CycleGANTraining(object):
         self.cycle_loss_lambda = args.cycle_loss_lambda
         self.identity_loss_lambda = args.identity_loss_lambda
         self.device = args.device
+        
+        self.vocoder = torch.hub.load('descriptinc/melgan-neurips', 'load_melgan')
+        self.sample_rate = args.sample_rate
 
-        # self.train_dataset = Dataset(args, coraal=True, voc=True, return_pair=True)
-        # self.train_dataloader = data.DataLoader(dataset=self.train_dataset,
-        #                                         batch_size=args.batch_size,
-        #                                         shuffle=True,
-        #                                         num_workers=args.num_workers,
-        #                                         pin_memory=True)
-        # self.train_dataloader = data.DataLoader(dataset=self.train_dataset,
-        #                                         batch_size=args.batch_size,
-        #                                         collate_fn=lambda x: data_processing(
-        #                                             x, "train"),
-        #                                         shuffle=True,
-        #                                         num_workers=args.num_workers,
-        #                                         pin_memory=True)
-        # self.n_samples = len(self.train_dataset)
-
-        normalized_dataset_A = '/home/data/vc3_melspec_dataset/voc_normalized.pickle'
-        normalized_dataset_B = '/home/data/vc3_melspec_dataset/coraal_normalized.pickle'
-
-        self.dataset_A = self.loadPickleFile(normalized_dataset_A)
-        self.dataset_B = self.loadPickleFile(normalized_dataset_B)
+        self.dataset_A = self.loadPickleFile(args.normalized_dataset_A_path)
+        dataset_A_norm_stats = np.load(args.norm_stats_A_path)
+        self.dataset_A_mean = dataset_A_norm_stats['mean_A']  # fix to mean and std after running data preprocessing script again
+        self.dataset_A_std = dataset_A_norm_stats['std_A']
+        self.dataset_B = self.loadPickleFile(args.normalized_dataset_B_path)
+        dataset_B_norm_stats = np.load(args.norm_stats_B_path)
+        self.dataset_B_mean = dataset_B_norm_stats['mean']
+        self.dataset_B_std = dataset_B_norm_stats['std']
 
         self.n_samples = len(self.dataset_A)
         self.dataset = trainingDataset(datasetA=self.dataset_A,
@@ -56,31 +48,15 @@ class CycleGANTraining(object):
                                                     batch_size=self.mini_batch_size,
                                                     shuffle=True,
                                                     drop_last=False)
-        # # Speech Parameters
-        # logf0s_normalization = np.load(logf0s_normalization)
-        # self.log_f0s_mean_A = logf0s_normalization['mean_A']
-        # self.log_f0s_std_A = logf0s_normalization['std_A']
-        # self.log_f0s_mean_B = logf0s_normalization['mean_B']
-        # self.log_f0s_std_B = logf0s_normalization['std_B']
-
-        # mcep_normalization = np.load(mcep_normalization)
-        # self.coded_sps_A_mean = mcep_normalization['mean_A']
-        # self.coded_sps_A_std = mcep_normalization['std_A']
-        # self.coded_sps_B_mean = mcep_normalization['mean_B']
-        # self.coded_sps_B_std = mcep_normalization['std_B']
+        
+        self.logger = TrainLogger(args, len(self.train_dataloader.dataset))
+        self.saver = ModelSaver(args)
 
         # Generator and Discriminator
         self.generator_A2B = Generator().to(self.device)
         self.generator_B2A = Generator().to(self.device)
         self.discriminator_A = Discriminator().to(self.device)
         self.discriminator_B = Discriminator().to(self.device)
-
-
-        # # Generator and Discriminator
-        # self.generator_A2B = Generator().to(args.device)
-        # self.generator_B2A = Generator().to(args.device)
-        # self.discriminator_A = Discriminator().to(args.device)
-        # self.discriminator_B = Discriminator().to(args.device)
 
         # Optimizer
         g_params = list(self.generator_A2B.parameters()) + \
@@ -94,8 +70,6 @@ class CycleGANTraining(object):
             d_params, lr=self.discriminator_lr, betas=(0.5, 0.999))
 
         # Storing Discriminatior and Generator Loss
-        self.generator_loss_store = []
-        self.discriminator_loss_store = []
 
     def adjust_lr_rate(self, optimizer, name='generator'):
         if name == 'generator':
@@ -119,21 +93,15 @@ class CycleGANTraining(object):
 
     def train(self):
         for epoch in range(self.start_epoch, self.num_epochs):
+            self.logger.start_epoch()
+            
             for i, (real_A, real_B) in enumerate(tqdm(self.train_dataloader)):
+                self.logger.start_iter()
                 num_iterations = (
                     self.n_samples // self.mini_batch_size) * epoch + i
-
-                if num_iterations > self.decay_after:  # TODO: move to end of training loop once logger has been integrated
-                    identity_loss_lambda = 0
-                    self.adjust_lr_rate(
-                        self.generator_optimizer, name='generator')
-                    self.adjust_lr_rate(
-                        self.generator_optimizer, name='discriminator')
                 
                 real_A = real_A.to(self.device, dtype=torch.float)
                 real_B = real_B.to(self.device, dtype=torch.float)
-                # real_A = torch.rand(2, 80, 64).to(self.device, dtype=torch.float)
-                # real_B = torch.rand(2, 80, 64).to(self.device, dtype=torch.float)
 
                 # Train Generator
                 fake_B = self.generator_A2B(real_A)
@@ -154,17 +122,17 @@ class CycleGANTraining(object):
                     torch.abs(real_A - identity_A)) + torch.mean(torch.abs(real_B - identity_B))
 
                 # Generator Loss
-                generator_loss_A2B = torch.mean((1 - d_fake_B) ** 2)
-                generator_loss_B2A = torch.mean((1 - d_fake_A) ** 2)
+                g_loss_A2B = torch.mean((1 - d_fake_B) ** 2)
+                g_loss_B2A = torch.mean((1 - d_fake_A) ** 2)
 
                 # Total Generator Loss
-                generator_loss = generator_loss_A2B + generator_loss_B2A + \
+                g_loss = g_loss_A2B + g_loss_B2A + \
                     self.cycle_loss_lambda * cycleLoss + self.identity_loss_lambda * identityLoss
-                self.generator_loss_store.append(generator_loss.item())
+                # self.generator_loss_store.append(generator_loss.item())
 
                 # Backprop for Generator
                 self.reset_grad()
-                generator_loss.backward()
+                g_loss.backward()
                 self.generator_optimizer.step()
 
                 # Train Discriminator
@@ -205,18 +173,34 @@ class CycleGANTraining(object):
                 # Final Loss for discriminator with the second step adverserial loss
                 d_loss = (d_loss_A + d_loss_B) / 2.0 + \
                     (d_loss_A_2nd + d_loss_B_2nd) / 2.0
-                self.discriminator_loss_store.append(d_loss.item())
+                # self.discriminator_loss_store.append(d_loss.item())
 
                 # Backprop for Discriminator
                 self.reset_grad()
                 d_loss.backward()
                 self.discriminator_optimizer.step()
 
-                if num_iterations % args.steps_per_print == 0:
-                    print(f"Epoch: {epoch} Step: {num_iterations} Generator Loss: {generator_loss.item()} Discriminator Loss: {d_loss.item()}")
-
-            if epoch % 2000 == 0:
-                print(f"Epoch: {epoch} Generator Loss: {generator_loss.item()} Discriminator Loss: {d_loss.item()}")
+                # if num_iterations % args.steps_per_print == 0:
+                #     print(f"Epoch: {epoch} Step: {num_iterations} Generator Loss: {generator_loss.item()} Discriminator Loss: {d_loss.item()}")
+                
+                self.logger.log_iter(loss_dict={'g_loss': g_loss.item(), 'd_loss': d_loss.item()})
+                
+                self.logger.end_iter()
+                # adjust learning rates
+                if self.logger.global_step > self.decay_after:
+                    identity_loss_lambda = 0
+                    self.adjust_lr_rate(
+                        self.generator_optimizer, name='generator')
+                    self.adjust_lr_rate(
+                        self.generator_optimizer, name='discriminator')
+            
+            wav_A = decode_melspectrogram(self.vocoder, generated_A[0].detach().cpu(), self.dataset_A_mean, self.dataset_A_std).cpu()
+            wav_A_fig = get_waveform_fig(wav_A, self.sample_rate)
+            wav_B = decode_melspectrogram(self.vocoder, generated_B[0].detach().cpu().numpy(), self.dataset_B_mean, self.dataset_B_std)
+            self.logger.log_img(wav_A_fig, "debug")
+            # generated_A.shape, generated_B.shape
+            
+            self.logger.end_epoch()
 
 
 if __name__ == "__main__":

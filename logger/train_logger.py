@@ -138,6 +138,9 @@ class TrainLogger(BaseLogger):
             metrics (dict): str to scalar dictionary containing metrics such as losses to log
         """
         self._log_scalars(metrics)
+        
+    def log_img(self, img, name):
+        self.summary_writer.add_image(name, img, self.global_step)
 
     def start_iter(self):
         """Log info for start of an iteration."""
