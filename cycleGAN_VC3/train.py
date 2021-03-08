@@ -200,7 +200,6 @@ class CycleGANTraining(object):
                         self.generator_optimizer, name='generator')
                     self.adjust_lr_rate(
                         self.generator_optimizer, name='discriminator')
-                break
             
             if self.logger.epoch % self.epochs_per_plot == 0:
                 # Log spectrograms
