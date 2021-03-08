@@ -5,7 +5,25 @@ Inherits BaseLogger class.
 
 from time import time
 from logger.base_logger import BaseLogger
+import torchvision.utils as vutils
 
+
+def visualize(images, save_path=None):
+    """
+    Visualize a grid of outputs and save to path if paths is provided.
+    Otherwise returns the grid.
+    Args:
+        images (list(torch.Tensor)): list of tensors
+        save_path (bool): path to save image to
+    Returns:
+        torch.Tensor: all images as grid
+    """
+    gridded_images = vutils.make_grid(images, padding=2, normalize=True)
+    if save_path:
+        vutils.save_image(gridded_images, save_path)
+        print(f'Saved images to {save_path}')
+
+    return gridded_images
 
 class AverageMeter(object):
     """
@@ -141,6 +159,9 @@ class TrainLogger(BaseLogger):
         
     def log_img(self, img, name):
         self.summary_writer.add_image(name, img, self.global_step)
+        
+    def log_audio(self, audio, name):
+        self.summary_writer.add_audio(name, audio, self.global_step)
 
     def start_iter(self):
         """Log info for start of an iteration."""
@@ -172,3 +193,21 @@ class TrainLogger(BaseLogger):
     def is_finished_training(self):
         """Return True if finished training, otherwise return False."""
         return 0 < self.num_epochs < self.epoch
+    
+    def visualize_outputs(self, img_dict):
+        """
+        Visualize predictions and targets in TensorBoard in grid form.
+        Args:
+            img_dict (dict): str to Tensor dictionary of images
+        Returns:
+            int: Number of examples visualized to TensorBoard.
+        """
+        imgs = []
+        names = '-'.join(list(img_dict.keys()))
+        for name, img in img_dict.items():
+            imgs.append(img)
+
+        self.summary_writer.add_image(
+            names, visualize(imgs), self.global_step)
+
+        return len(img_dict)

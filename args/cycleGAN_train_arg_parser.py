@@ -41,4 +41,7 @@ class CycleGANTrainArgParser(TrainArgParser):
         self.parser.add_argument(
             '--identity_loss_lambda', type=float, default=5, help='Lambda value for identity loss.')
         
+        self.parser.add_argument(
+            '--epochs_per_plot', type=int, default=2, help='Epochs per save plot.')
+        
         self.parser.set_defaults(batch_size=1, num_epochs=50, decay_after=1e4, start_epoch=1, steps_per_print=100, )
