@@ -281,7 +281,7 @@ class Generator(nn.Module):
 
 
 ##########################################################################################
-# 鉴别器  PatchGAN
+# PatchGAN
 class Discriminator(nn.Module):
     def __init__(self, input_shape=(80, 64), residual_in_channels=256):
         super(Discriminator, self).__init__()
@@ -375,7 +375,8 @@ if __name__ == '__main__':
     np.random.seed(0)
 
     residual_in_channels = 256
-    input = np.random.randn(2, 80, 64) 
+    # input = np.random.randn(2, 80, 64)
+    input = np.random.randn(2, 80, 64)
     input = torch.from_numpy(input).float()
     print("Generator input: ", input.shape)
     generator = Generator(input.shape[1:], residual_in_channels)

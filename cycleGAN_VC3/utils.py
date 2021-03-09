@@ -23,7 +23,7 @@ from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.figure import Figure
 
 def decode_melspectrogram(vocoder, melspectrogram, mel_mean, mel_std):
-    denorm_converted = np.ma.exp(melspectrogram * mel_std + mel_mean)
+    denorm_converted = melspectrogram * mel_std + mel_mean
     rev = vocoder.inverse(torch.tensor(np.array([denorm_converted])).float())
     return rev
 
