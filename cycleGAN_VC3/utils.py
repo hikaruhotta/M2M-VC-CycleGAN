@@ -13,6 +13,8 @@ from torchvision.transforms import ToTensor
 import librosa
 import librosa.display
 
+from tqdm import tqdm
+
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -23,7 +25,10 @@ from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.figure import Figure
 
 def decode_melspectrogram(vocoder, melspectrogram, mel_mean, mel_std):
+    print(mel_mean.shape, mel_std.shape, melspectrogram.shape)
     denorm_converted = np.ma.exp(melspectrogram * mel_std + mel_mean)
+    # print(torch.tensor(np.array([denorm_converted])).float().shape)
+    print(type(denorm_converted))
     rev = vocoder.inverse(torch.tensor(np.array([denorm_converted])).float())
     return rev
 
@@ -145,3 +150,9 @@ def get_mel_spectrogram_fig(spec, title="Mel-Spectrogram"):
     
     plt.close(figure)
     return image
+
+    
+            
+            
+        
+    

@@ -24,7 +24,7 @@ class trainingDataset(Dataset):
         num_samples = min(len(dataset_A), len(dataset_B))
         train_data_A_idx = np.arange(len(dataset_A))
         train_data_B_idx = np.arange(len(dataset_B))
-        np.random.shuffle(train_data_A_idx)
+        np.random.shuffle(train_data_A_idx)  # Why do we shuffle?
         np.random.shuffle(train_data_B_idx)
         train_data_A_idx_subset = train_data_A_idx[:num_samples]
         train_data_B_idx_subset = train_data_B_idx[:num_samples]
