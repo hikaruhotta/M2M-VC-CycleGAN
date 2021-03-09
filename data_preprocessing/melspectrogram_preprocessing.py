@@ -80,13 +80,6 @@ class Audio2Mel(nn.Module):
 def normels(wavspath):
     wav_files = glob.glob(os.path.join(
         wavspath, '**', '*.wav'), recursive=True)  # source_path
-#   vocoder = Audio2Mel(n_fft=1024,
-#                     hop_length=256,
-#                     win_length=1024,
-#                     sampling_rate=22050,
-#                     n_mel_channels=80,
-#                     mel_fmin=0.0,
-#                     mel_fmax=None)
     vocoder = torch.hub.load('descriptinc/melgan-neurips', 'load_melgan')
 
     mel_list = list()
@@ -95,20 +88,15 @@ def normels(wavspath):
         spec = vocoder(torch.tensor([wav_orig]))
         mel_list.append(spec.cpu().detach().numpy()[0])
 
-    # Note: np.ma.log() calculating log on masked array (for incomplete or invalid entries in array)
-    mel_concatenated = np.ma.log(np.concatenate(mel_list, axis=1))
+    mel_concatenated = np.concatenate(mel_list, axis=1)
     mel_mean = np.mean(mel_concatenated, axis=1, keepdims=True)
-    mel_std = np.std(mel_concatenated, axis=1, keepdims=True)
-    #print(mel_concatenated.shape, mel_mean.shape, mel_std.shape)
+    mel_std = np.std(mel_concatenated, axis=1, keepdims=True) + 1e-9
 
     mel_normalized = list()
     for mel in mel_list:
         assert mel.shape[-1] >= 64, f"Mel spectogram length must be greater than 64 frames, but was {mel.shape[-1]}"
-        # print("Mel shape = ", mel.shape)
-        app = (np.ma.log(mel) - mel_mean) / mel_std
+        app = (mel - mel_mean) / mel_std
         mel_normalized.append(app)
-        # print("Normalized mel, mel_std, mel_mean shapes = ",
-        #       app.shape, mel_std.shape, mel_mean.shape)
 
     return mel_normalized, mel_mean, mel_std
 
