@@ -37,8 +37,8 @@ class CycleGANTraining(object):
         self.dataset_A = self.loadPickleFile(args.normalized_dataset_A_path)
         dataset_A_norm_stats = np.load(args.norm_stats_A_path)
         # TODO: fix to mean and std after running data preprocessing script again
-        self.dataset_A_mean = dataset_A_norm_stats['mean_A']
-        self.dataset_A_std = dataset_A_norm_stats['std_A']
+        self.dataset_A_mean = dataset_A_norm_stats['mean']
+        self.dataset_A_std = dataset_A_norm_stats['std']
         self.dataset_B = self.loadPickleFile(args.normalized_dataset_B_path)
         dataset_B_norm_stats = np.load(args.norm_stats_B_path)
         self.dataset_B_mean = dataset_B_norm_stats['mean']
@@ -216,7 +216,6 @@ class CycleGANTraining(object):
                         self.generator_optimizer, name='generator')
                     self.adjust_lr_rate(
                         self.generator_optimizer, name='discriminator')
-                break
 
             if self.logger.epoch % self.epochs_per_plot == 0:
                 # Log spectrograms
@@ -237,17 +236,17 @@ class CycleGANTraining(object):
                 fake_wav_A = decode_melspectrogram(self.vocoder, generated_A[0].detach(
                 ).cpu(), self.dataset_A_mean, self.dataset_A_std).cpu()
                 real_wav_B = decode_melspectrogram(self.vocoder, real_B[0].detach(
-                ).cpu().numpy(), self.dataset_B_mean, self.dataset_B_std).cpu()
+                ).cpu(), self.dataset_B_mean, self.dataset_B_std).cpu()
                 fake_wav_B = decode_melspectrogram(self.vocoder, generated_B[0].detach(
-                ).cpu().numpy(), self.dataset_B_mean, self.dataset_B_std).cpu()
+                ).cpu(), self.dataset_B_mean, self.dataset_B_std).cpu()
 
-                # Log wav
-                real_wav_A_fig = get_waveform_fig(real_wav_A, self.sample_rate)
-                fake_wav_A_fig = get_waveform_fig(fake_wav_A, self.sample_rate)
-                real_wav_B_fig = get_waveform_fig(real_wav_B, self.sample_rate)
-                fake_wav_B_fig = get_waveform_fig(fake_wav_B, self.sample_rate)
-                self.logger.visualize_outputs({"real_voc_wav": real_wav_A_fig, "fake_coraal_wav": fake_wav_B_fig,
-                                               "real_coraal_wav": real_wav_B_fig, "fake_voc_wav": fake_wav_A_fig})
+                # # Log wav
+                # real_wav_A_fig = get_waveform_fig(real_wav_A, self.sample_rate)
+                # fake_wav_A_fig = get_waveform_fig(fake_wav_A, self.sample_rate)
+                # real_wav_B_fig = get_waveform_fig(real_wav_B, self.sample_rate)
+                # fake_wav_B_fig = get_waveform_fig(fake_wav_B, self.sample_rate)
+                # self.logger.visualize_outputs({"real_voc_wav": real_wav_A_fig, "fake_coraal_wav": fake_wav_B_fig,
+                #                                "real_coraal_wav": real_wav_B_fig, "fake_voc_wav": fake_wav_A_fig})
 
                 # Convert spectrograms from validation set to wav and log to tensorboard
                 real_mel_full_A, real_mel_full_B = next(
@@ -268,10 +267,10 @@ class CycleGANTraining(object):
                 ).cpu(), self.dataset_B_mean, self.dataset_B_std).cpu()
                 self.logger.log_audio(
                     real_wav_full_A.T, "real_voc_audio", self.sample_rate)
-                # self.logger.log_audio(fake_wav_full_A.T, "fake_voc_audio", self.sample_rate)
+                self.logger.log_audio(fake_wav_full_A.T, "fake_voc_audio", self.sample_rate)
                 self.logger.log_audio(
                     real_wav_full_B.T, "real_coraal_audio", self.sample_rate)
-                # self.logger.log_audio(fake_wav_full_B.T, "fake_coraal_audio", self.sample_rate)
+                self.logger.log_audio(fake_wav_full_B.T, "fake_coraal_audio", self.sample_rate)
 
             if self.logger.epoch % self.epochs_per_save == 0:
                 self.saver.save(self.logger.epoch, self.generator_A2B,

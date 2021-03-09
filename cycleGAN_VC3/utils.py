@@ -26,7 +26,7 @@ from matplotlib.figure import Figure
 
 def decode_melspectrogram(vocoder, melspectrogram, mel_mean, mel_std):
     denorm_converted = melspectrogram * mel_std + mel_mean
-    rev = vocoder.inverse(torch.tensor(np.array([denorm_converted])).float())
+    rev = vocoder.inverse(denorm_converted.unsqueeze(0))
     return rev
 
 
