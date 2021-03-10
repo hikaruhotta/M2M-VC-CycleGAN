@@ -256,7 +256,7 @@ class CycleGANTraining(object):
                 real_mel_full_B = real_mel_full_B.to(
                     self.device, dtype=torch.float)
                 fake_mel_full_B = self.generator_A2B(real_mel_full_A)
-                fake_mel_full_A = self.generator_B2A(fake_mel_full_B)
+                fake_mel_full_A = self.generator_B2A(real_mel_full_B)
                 real_wav_full_A = decode_melspectrogram(self.vocoder, real_mel_full_A[0].detach(
                 ).cpu(), self.dataset_A_mean, self.dataset_A_std).cpu()
                 fake_wav_full_A = decode_melspectrogram(self.vocoder, fake_mel_full_A[0].detach(

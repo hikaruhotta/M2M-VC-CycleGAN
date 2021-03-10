@@ -33,8 +33,8 @@ class CycleGANTrainArgParser(TrainArgParser):
         self.parser.add_argument(
             '--generator_lr', type=float, default=2e-4, help='Initial generator learning rate.')
         self.parser.add_argument(
-            '--discriminator_lr', type=float, default=1e-4, help='Initial discrminator learning rate.')
-        
+            '--discriminator_lr', type=float, default=5e-5, help='Initial discrminator learning rate.')
+
         # Loss lambdas
         self.parser.add_argument(
             '--cycle_loss_lambda', type=float, default=10, help='Lambda value for cycle consistency loss.')
