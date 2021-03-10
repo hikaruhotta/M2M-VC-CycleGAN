@@ -9,4 +9,3 @@ python -W ignore::UserWarning -m cycleGAN_VC3.train \
     --epochs_per_save 50 \
     --epochs_per_plot 25 \
     --batch_size 20
-    # --continue_train
