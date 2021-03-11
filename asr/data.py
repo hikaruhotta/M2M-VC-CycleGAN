@@ -5,8 +5,60 @@ Adapted from https://colab.research.google.com/drive/1IPpwx4rX32rqHKpLz7dc8sOKsp
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
+import torchvision
 import torchaudio
 
+from librosa.filters import mel as librosa_mel_fn
+
+class Audio2Mel(nn.Module):
+    """
+    https://github.com/descriptinc/melgan-neurips/blob/6488045bfba1975602288de07a58570c7b4d66ea/mel2wav/modules.py#L26-L69
+    """
+    def __init__(
+        self,
+        n_fft=1024,
+        hop_length=256,
+        win_length=1024,
+        sampling_rate=22050,
+        n_mel_channels=80,
+        mel_fmin=0.0,
+        mel_fmax=None,
+    ):
+        super().__init__()
+        ##############################################
+        # FFT Parameters                              #
+        ##############################################
+        window = torch.hann_window(win_length).float()
+        mel_basis = librosa_mel_fn(
+            sampling_rate, n_fft, n_mel_channels, mel_fmin, mel_fmax
+        )
+        mel_basis = torch.from_numpy(mel_basis).float()
+        self.register_buffer("mel_basis", mel_basis)
+        self.register_buffer("window", window)
+        self.n_fft = n_fft
+        self.hop_length = hop_length
+        self.win_length = win_length
+        self.sampling_rate = sampling_rate
+        self.n_mel_channels = n_mel_channels
+
+    def forward(self, audio):
+        p = (self.n_fft - self.hop_length) // 2
+        audio = audio.unsqueeze(1)
+        audio = F.pad(audio, (p, p), "reflect").squeeze(1)
+        fft = torch.stft(
+            audio,
+            n_fft=self.n_fft,
+            hop_length=self.hop_length,
+            win_length=self.win_length,
+            window=self.window,
+            center=False,
+        )
+        real_part, imag_part = fft.unbind(-1)
+        magnitude = torch.sqrt(real_part ** 2 + imag_part ** 2)
+        mel_output = torch.matmul(self.mel_basis, magnitude)
+        log_mel_spec = torch.log10(torch.clamp(mel_output, min=1e-5))
+        return log_mel_spec
 
 class TextTransform:
     """Maps characters to integers and vice versa"""
@@ -68,19 +120,25 @@ class TextTransform:
             string.append(self.index_map[i])
         return ''.join(string).replace('<SPACE>', ' ')
 
+            # torchaudio.transforms.MelSpectrogram(
+            #     sample_rate=sample_rate, n_mels=128),
 
-def get_audio_transforms(phase, sample_rate=16000):
+def get_audio_transforms(phase, sample_rate=22050):
+    audio_2_mel = Audio2Mel()
+    audio_2_mel_transform = audio_2_mel.forward
     if phase == 'train':
-        transforms = nn.Sequential(
-            torchaudio.transforms.MelSpectrogram(
-                sample_rate=sample_rate, n_mels=128),
+        transforms = torchvision.transforms.Compose([
+            torchvision.transforms.Lambda(lambd=lambda x: audio_2_mel(x)),
+            # torchaudio.transforms.MelSpectrogram(
+            #     sample_rate=sample_rate, n_mels=80),
             torchaudio.transforms.FrequencyMasking(freq_mask_param=30),
             torchaudio.transforms.TimeMasking(time_mask_param=100)
-        )
+        ])
     elif phase == 'valid':
-        transforms = torchaudio.transforms.MelSpectrogram(
-            sample_rate=sample_rate, n_mels=128
-        )
+        # transforms = torchaudio.transforms.MelSpectrogram(
+        #     sample_rate=sample_rate, n_mels=128
+        # )
+        transforms = audio_2_mel_transform
 
     return transforms
 
@@ -91,8 +149,9 @@ def data_processing(data, phase, text_transform):
     input_lengths = []
     label_lengths = []
     # for (waveform, sample_rate, utterance, _, _, _) in data:
-    for (waveform, sample_rate, utterance, speaker_id, duration) in data:
-        audio_transforms = get_audio_transforms(phase, sample_rate)
+    for (waveform, sample_rate, utterance, speaker_id, _, _) in data:
+        # audio_transforms = get_audio_transforms(phase, sample_rate)
+        audio_transforms = get_audio_transforms(phase)
         spec = audio_transforms(waveform).squeeze(0).transpose(0, 1)
         spectrograms.append(spec)
         label = torch.Tensor(text_transform.text_to_int(utterance.lower()))

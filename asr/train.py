@@ -17,7 +17,6 @@ def train(args, model, train_loader, criterion, optimizer, scheduler, logger):
 
         spectrograms, labels, input_lengths, label_lengths = _data
         spectrograms, labels = spectrograms.to(args.device), labels.to(args.device)
-
         optimizer.zero_grad()
 
         output = model(spectrograms)  # (batch, time, n_class)

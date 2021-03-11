@@ -18,7 +18,6 @@ class CNNLayerNorm(nn.Module):
         # x (batch, channel, feature, time)
         x = x.transpose(2, 3).contiguous()  # (batch, channel, time, feature)
         x = self.layer_norm(x)
-        # (batch, channel, feature, time)
         return x.transpose(2, 3).contiguous()
 
 

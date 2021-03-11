@@ -112,14 +112,14 @@ class Dataset(data.Dataset):
         if self.return_pair:
             coraal_index = random.randint(0, len(self.coraal_df) - 1)
             waveform_A, sample_rate_A = torchaudio.load(self.coraal_wav_paths[coraal_index])
-            items.append((waveform_A, sample_rate_A, self.coraal_ground_truth_text[coraal_index], self.coraal_speaker_ids[coraal_index], self.coraal_durations[coraal_index]))
-
+            items.append((waveform_A, sample_rate_A, self.coraal_ground_truth_text[coraal_index], self.coraal_speaker_ids[coraal_index], self.coraal_durations[coraal_index], None))
             voc_index = random.randint(0, len(self.voc_df) - 1)
             waveform_B, sample_rate_B = torchaudio.load(self.voc_wav_paths[voc_index])
-            items.append((waveform_B, sample_rate_B, self.voc_ground_truth_text[voc_index], self.voc_speaker_ids[voc_index], self.voc_durations[voc_index]))
+            items.append((waveform_B, sample_rate_B, self.voc_ground_truth_text[voc_index], self.voc_speaker_ids[voc_index], self.voc_durations[voc_index], None))
+
         else:
             waveform, sample_rate = torchaudio.load(self.wav_paths[index])
-            items = [waveform, sample_rate, self.ground_truth_text[index], self.speaker_ids[index], self.durations[index]]
+            items = [waveform, sample_rate, self.ground_truth_text[index], self.speaker_ids[index], self.durations[index], None]
         
         # Returns (waveform, sample_rate, ground_truth_text, speaker_ids, duration)
         return tuple(items)
