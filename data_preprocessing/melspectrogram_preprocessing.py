@@ -19,6 +19,8 @@ from tqdm import tqdm
 import random
 from torch.utils.data.dataset import Dataset
 import pickle
+import argparse
+import pandas as pd
 
 n_fft = 1024
 hop_length = 256
@@ -28,65 +30,7 @@ n_mel_channels = 80
 mel_fmin = 0.0
 mel_fmax = None
 
-# Code from: https://github.com/descriptinc/melgan-neurips
-
-
-class Audio2Mel(nn.Module):
-    def __init__(
-        self,
-        n_fft=1024,
-        hop_length=256,
-        win_length=1024,
-        sampling_rate=22050,
-        n_mel_channels=80,
-        mel_fmin=0.0,
-        mel_fmax=None,
-    ):
-        super().__init__()
-        ##############################################
-        # FFT Parameters                              #
-        ##############################################
-        window = torch.hann_window(win_length).float()
-        mel_basis = librosa_mel_fn(
-            sampling_rate, n_fft, n_mel_channels, mel_fmin, mel_fmax
-        )
-        mel_basis = torch.from_numpy(mel_basis).float()
-        self.register_buffer("mel_basis", mel_basis)
-        self.register_buffer("window", window)
-        self.n_fft = n_fft
-        self.hop_length = hop_length
-        self.win_length = win_length
-        self.sampling_rate = sampling_rate
-        self.n_mel_channels = n_mel_channels
-
-    def forward(self, audio):
-        p = (self.n_fft - self.hop_length) // 2
-        audio = F.pad(audio, (p, p), "reflect").squeeze(1)
-        fft = torch.stft(
-            audio,
-            n_fft=self.n_fft,
-            hop_length=self.hop_length,
-            win_length=self.win_length,
-            window=self.window,
-            center=False,
-        )
-        real_part, imag_part = fft.unbind(-1)
-        magnitude = torch.sqrt(real_part ** 2 + imag_part ** 2)
-        mel_output = torch.matmul(self.mel_basis, magnitude)
-        log_mel_spec = torch.log10(torch.clamp(mel_output, min=1e-5))
-        return log_mel_spec
-
-
-def normels(wavspath):
-    wav_files = glob.glob(os.path.join(
-        wavspath, '**', '*.wav'), recursive=True)  # source_path
-#   vocoder = Audio2Mel(n_fft=1024,
-#                     hop_length=256,
-#                     win_length=1024,
-#                     sampling_rate=22050,
-#                     n_mel_channels=80,
-#                     mel_fmin=0.0,
-#                     mel_fmax=None)
+def normalize_mel(wav_files):
     vocoder = torch.hub.load('descriptinc/melgan-neurips', 'load_melgan')
 
     mel_list = list()
@@ -95,20 +39,15 @@ def normels(wavspath):
         spec = vocoder(torch.tensor([wav_orig]))
         mel_list.append(spec.cpu().detach().numpy()[0])
 
-    # Note: np.ma.log() calculating log on masked array (for incomplete or invalid entries in array)
-    mel_concatenated = np.ma.log(np.concatenate(mel_list, axis=1))
+    mel_concatenated = np.concatenate(mel_list, axis=1)
     mel_mean = np.mean(mel_concatenated, axis=1, keepdims=True)
-    mel_std = np.std(mel_concatenated, axis=1, keepdims=True)
-    #print(mel_concatenated.shape, mel_mean.shape, mel_std.shape)
+    mel_std = np.std(mel_concatenated, axis=1, keepdims=True) + 1e-9
 
     mel_normalized = list()
     for mel in mel_list:
         assert mel.shape[-1] >= 64, f"Mel spectogram length must be greater than 64 frames, but was {mel.shape[-1]}"
-        # print("Mel shape = ", mel.shape)
-        app = (np.ma.log(mel) - mel_mean) / mel_std
+        app = (mel - mel_mean) / mel_std
         mel_normalized.append(app)
-        # print("Normalized mel, mel_std, mel_mean shapes = ",
-        #       app.shape, mel_std.shape, mel_mean.shape)
 
     return mel_normalized, mel_mean, mel_std
 
@@ -122,37 +61,88 @@ def load_pickle_file(fileName):
     with open(fileName, 'rb') as f:
         return pickle.load(f)
 
-def buildTrainset(source_path, target_path, cache_folder='./cache/'):
+def read_manifest(data_dir, split=None, dataset=None, speaker_id=None):
+    # Load manifest file which defines dataset
+    manifest_path = os.path.join('./manifests', f'{dataset}_manifest.csv')
+    df = pd.read_csv(manifest_path, sep=',')
 
-    print('Building training dataset...')
+    # Filter by speaker_id
+    df['speaker_id'] = df['speaker_id'].astype(str)
+    df = df[df['speaker_id'] == speaker_id]
+    wav_files = df['wav_file'].tolist()
 
-    mel_normalized_A, mel_mean_A, mel_std_A = normels(source_path)
-    mel_normalized_B, mel_mean_B, mel_std_B = normels(target_path)
+    # Contruct wav paths
+    wav_paths = [os.path.join(data_dir, wav_files[i]) for i in range(len(wav_files))]
+
+    return wav_paths
+
+def args_to_list(csv, arg_type=str):
+    """Convert comma-separated arguments to a list."""
+    arg_vals = [arg_type(d) for d in str(csv).split(',')]
+    return arg_vals
+
+def buildTrainset(source_ids, target_ids, cache_folder='./cache/'):
+    data_dir = '/home/data/'
+    source_ids = args_to_list(source_ids)
+    target_ids = args_to_list(target_ids)
 
     if not os.path.exists(cache_folder):
         os.makedirs(cache_folder)
 
-    np.savez(os.path.join(cache_folder, 'norm_stat_voc.npz'),
-            mean=mel_mean_A,
-            std=mel_std_A)
+    source_cache_folder = os.path.join(cache_folder, 'voc')
+    if not os.path.exists(source_cache_folder):
+        os.makedirs(source_cache_folder)
+
+    for source_id in source_ids:
+        print(f'Building training dataset for {source_id}...')
+        voc_wav_paths = read_manifest(data_dir, dataset="voc", speaker_id=source_id)
+        print(f'Found {len(voc_wav_paths)} wav files')
+        mel_normalized_A, mel_mean_A, mel_std_A = normalize_mel(voc_wav_paths)
+
+        save_dir = os.path.join(source_cache_folder, source_id)
+        if not os.path.exists(save_dir):
+            os.makedirs(save_dir)
+
+        # np.savez(os.path.join(save_dir, 'norm_stat_voc.npz'),
+        #     mean=mel_mean_A,
+        #     std=mel_std_A)
+        
+        # save_pickle(variable=mel_normalized_A,
+        #         fileName=os.path.join(save_dir, "voc_normalized.pickle"))
     
-    np.savez(os.path.join(cache_folder, 'norm_stat_coraal.npz'),
-            mean=mel_mean_B,
-            std=mel_std_B)
+    target_cache_folder = os.path.join(cache_folder, 'coraal')
+    if not os.path.exists(target_cache_folder):
+        os.makedirs(target_cache_folder)
+    for target_id in target_ids:
+        print(f'Building training dataset for {target_id}...')
+        coraal_wav_paths = read_manifest(data_dir, dataset="coraal", speaker_id=target_id)
+        print(f'Found {len(coraal_wav_paths)} wav files')
+        mel_normalized_B, mel_mean_B, mel_std_B = normalize_mel(coraal_wav_paths)
 
-    save_pickle(variable=mel_normalized_A,
-                fileName=os.path.join(cache_folder, "voc_normalized.pickle"))
+        save_dir = os.path.join(target_cache_folder, target_id)
+        if not os.path.exists(save_dir):
+            os.makedirs(save_dir)
 
-    save_pickle(variable=mel_normalized_B,
-                fileName=os.path.join(cache_folder, "coraal_normalized.pickle"))
+        # np.savez(os.path.join(cache_folder, 'norm_stat_coraal.npz'),
+        #     mean=mel_mean_B,
+        #     std=mel_std_B)
+        
+        # save_pickle(variable=mel_normalized_B,
+        #         fileName=os.path.join(cache_folder, "coraal_normalized.pickle"))
 
     print('training dataset constructed and saved!')
 
 
 if __name__ == '__main__':
-    source_path = '/home/sofianzalouk/sofian_dataset/voc'
-    target_path = '/home/sofianzalouk/sofian_dataset/coraal'
-    cache_folder = '/home/data/vc3_melspec_dataset'
 
-    buildTrainset(source_path=source_path,
-                  target_path=target_path, cache_folder=cache_folder)
+    parser = argparse.ArgumentParser(description=' ')
+
+    parser.add_argument('--source_ids', type=str, default=None,
+                        help='Comma-separated list of source speaker (VOC) IDs.')
+    parser.add_argument('--target_ids', type=str, default=None,
+                        help='Comma-separated list of target speaker (CORAAL) IDs.')
+    parser.add_argument('--cache_folder', type=str, default='/home/data/vc3_melspec_dataset',
+                        help='Directory to save outputs.')
+    args = parser.parse_args()
+
+    buildTrainset(**vars(args))

@@ -160,8 +160,8 @@ class TrainLogger(BaseLogger):
     def log_img(self, img, name):
         self.summary_writer.add_image(name, img, self.global_step)
         
-    def log_audio(self, audio, name):
-        self.summary_writer.add_audio(name, audio, self.global_step)
+    def log_audio(self, audio, name, sampling_rate):
+        self.summary_writer.add_audio(name, audio, self.global_step, sampling_rate)
 
     def start_iter(self):
         """Log info for start of an iteration."""

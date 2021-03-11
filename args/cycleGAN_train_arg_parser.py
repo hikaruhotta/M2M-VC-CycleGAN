@@ -33,7 +33,7 @@ class CycleGANTrainArgParser(TrainArgParser):
         self.parser.add_argument(
             '--generator_lr', type=float, default=2e-4, help='Initial generator learning rate.')
         self.parser.add_argument(
-            '--discriminator_lr', type=float, default=1e-4, help='Initial discrminator learning rate.')
+            '--discriminator_lr', type=float, default=5e-5, help='Initial discrminator learning rate.')
         
         # Loss lambdas
         self.parser.add_argument(
@@ -44,4 +44,11 @@ class CycleGANTrainArgParser(TrainArgParser):
         self.parser.add_argument(
             '--epochs_per_plot', type=int, default=2, help='Epochs per save plot.')
         
-        self.parser.set_defaults(batch_size=1, num_epochs=50, decay_after=1e4, start_epoch=1, steps_per_print=100, )
+        self.parser.add_argument(
+            '--num_frames', type=int, default=64, help='Num frames per training sample.'
+        )
+        self.parser.add_argument(
+            '--num_frames_validation', type=int, default=320, help='Num frames per validation sample.'
+        )
+        
+        self.parser.set_defaults(batch_size=1, num_epochs=50, decay_after=1e4, start_epoch=1, steps_per_print=100, num_frames=64)
