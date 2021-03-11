@@ -130,8 +130,12 @@ class Generator(nn.Module):
                                          kernel_size=1,
                                          stride=1,
                                          padding=0)
+<<<<<<< HEAD
         self.conv2dto1dLayer_tfan =  nn.InstanceNorm1d(num_features=residual_in_channels,affine=True)
         # self.conv2dto1dLayer_tfan = TFAN_1D(residual_in_channels)
+=======
+        self.conv2dto1dLayer_tfan = TFAN_1D(residual_in_channels)
+>>>>>>> b9c9a7ad0088668e7cb23626a030ea86692cba7a
 
         # Residual Blocks
         self.residualLayer1 = ResidualLayer(in_channels=residual_in_channels,
@@ -171,8 +175,12 @@ class Generator(nn.Module):
                                          kernel_size=1,
                                          stride=1,
                                          padding=0)
+<<<<<<< HEAD
         self.conv1dto2dLayer_tfan = nn.InstanceNorm1d(num_features=self.flattened_channels, affine=True)
         # self.conv1dto2dLayer_tfan = TFAN_1D(self.flattened_channels)
+=======
+        self.conv1dto2dLayer_tfan = TFAN_1D(self.flattened_channels)
+>>>>>>> b9c9a7ad0088668e7cb23626a030ea86692cba7a
 
         # UpSample Layer
         self.upSample1 = self.upSample(in_channels=residual_in_channels,
@@ -216,11 +224,15 @@ class Generator(nn.Module):
                                                  kernel_size=kernel_size,
                                                  stride=stride,
                                                  padding=padding),
+<<<<<<< HEAD
                                        nn.PixelShuffle(upscale_factor=2),
                                        nn.InstanceNorm2d(	
                                            num_features=out_channels // 4,	
                                            affine=True),	
                                        GLU())
+=======
+                                       nn.PixelShuffle(upscale_factor=2))
+>>>>>>> b9c9a7ad0088668e7cb23626a030ea86692cba7a
         return self.convLayer
 
     def forward(self, x):
@@ -245,7 +257,11 @@ class Generator(nn.Module):
         # print("Generator forward reshape2dto1d: ", reshape2dto1d.shape)
         conv2dto1d_layer = self.conv2dto1dLayer(reshape2dto1d)
         # print("Generator forward conv2dto1d_layer: ", conv2dto1d_layer.shape)
+<<<<<<< HEAD
         conv2dto1d_layer = self.conv2dto1dLayer_tfan(conv2dto1d_layer)
+=======
+        conv2dto1d_layer = self.conv2dto1dLayer_tfan(conv2dto1d_layer, x)
+>>>>>>> b9c9a7ad0088668e7cb23626a030ea86692cba7a
         # print("Generator forward conv2dto1d_layer_tfan: ", conv2dto1d_layer.shape)
 
         residual_layer_1 = self.residualLayer1(conv2dto1d_layer)
@@ -260,7 +276,11 @@ class Generator(nn.Module):
         # 1D -> 2D
         conv1dto2d_layer = self.conv1dto2dLayer(residual_layer_6)
         # print("Generator forward conv1dto2d_layer: ", conv1dto2d_layer.shape)
+<<<<<<< HEAD
         conv1dto2d_layer = self.conv1dto2dLayer_tfan(conv1dto2d_layer)
+=======
+        conv1dto2d_layer = self.conv1dto2dLayer_tfan(conv1dto2d_layer, x)
+>>>>>>> b9c9a7ad0088668e7cb23626a030ea86692cba7a
 
         # Reshape
         reshape1dto2d = conv1dto2d_layer.unsqueeze(2)
@@ -270,6 +290,7 @@ class Generator(nn.Module):
         # UpSample
         upsample_layer_1 = self.upSample1(reshape1dto2d)
         # print("Generator forward upsample_layer_1: ", upsample_layer_1.shape)
+<<<<<<< HEAD
         # upsample_layer_1 = self.upSample1_tfan(upsample_layer_1)
         # print("Generator forward upsample_layer_1: ", upsample_layer_1.shape)
         # upsample_layer_1 = self.glu(upsample_layer_1)
@@ -278,6 +299,16 @@ class Generator(nn.Module):
         # print("Generator forward upsample_layer_2: ", upsample_layer_2.shape)
         # upsample_layer_2 = self.upSample2_tfan(upsample_layer_2, x)
         # upsample_layer_2 = self.glu(upsample_layer_2)
+=======
+        upsample_layer_1 = self.upSample1_tfan(upsample_layer_1, x)
+        # print("Generator forward upsample_layer_1: ", upsample_layer_1.shape)
+        upsample_layer_1 = self.glu(upsample_layer_1)
+
+        upsample_layer_2 = self.upSample2(upsample_layer_1)
+        # print("Generator forward upsample_layer_2: ", upsample_layer_2.shape)
+        upsample_layer_2 = self.upSample2_tfan(upsample_layer_2, x)
+        upsample_layer_2 = self.glu(upsample_layer_2)
+>>>>>>> b9c9a7ad0088668e7cb23626a030ea86692cba7a
 
         output = self.lastConvLayer(upsample_layer_2)
         # print("Generator forward output: ", output.shape)
