@@ -12,3 +12,4 @@ events.out.tfevents.*
 *.tar
 *.ipynb_checkpoints
 *.out
+notebooks/data_exploration.ipynb
