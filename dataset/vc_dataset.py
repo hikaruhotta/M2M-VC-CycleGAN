@@ -9,10 +9,11 @@ import numpy as np
 
 
 class trainingDataset(Dataset):
-    def __init__(self, datasetA, datasetB, n_frames=128):
+    def __init__(self, datasetA, datasetB, n_frames=64, valid=False):
         self.datasetA = datasetA
         self.datasetB = datasetB
         self.n_frames = n_frames
+        self.valid = valid
 
     def __getitem__(self, index):
         dataset_A = self.datasetA
@@ -20,8 +21,11 @@ class trainingDataset(Dataset):
         n_frames = self.n_frames
 
         self.length = min(len(dataset_A), len(dataset_B))
-
         num_samples = min(len(dataset_A), len(dataset_B))
+
+        if self.valid:
+            return dataset_A[index], dataset_B[index]
+
         train_data_A_idx = np.arange(len(dataset_A))
         train_data_B_idx = np.arange(len(dataset_B))
         np.random.shuffle(train_data_A_idx)  # Why do we shuffle?

@@ -94,8 +94,8 @@ def buildTrainset(source_ids, target_ids, cache_folder='./cache/'):
         os.makedirs(source_cache_folder)
 
     for source_id in source_ids:
-        print(f'Building training dataset for {source_id}...')
         voc_wav_paths = read_manifest(data_dir, dataset="voc", speaker_id=source_id)
+        print(f'Building training dataset for {source_id}...')
         print(f'Found {len(voc_wav_paths)} wav files')
         mel_normalized_A, mel_mean_A, mel_std_A = normalize_mel(voc_wav_paths)
 
@@ -103,19 +103,19 @@ def buildTrainset(source_ids, target_ids, cache_folder='./cache/'):
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
 
-        # np.savez(os.path.join(save_dir, 'norm_stat_voc.npz'),
-        #     mean=mel_mean_A,
-        #     std=mel_std_A)
+        np.savez(os.path.join(save_dir, 'norm_stat_voc.npz'),
+            mean=mel_mean_A,
+            std=mel_std_A)
         
-        # save_pickle(variable=mel_normalized_A,
-        #         fileName=os.path.join(save_dir, "voc_normalized.pickle"))
+        save_pickle(variable=mel_normalized_A,
+                fileName=os.path.join(save_dir, "voc_normalized.pickle"))
     
     target_cache_folder = os.path.join(cache_folder, 'coraal')
     if not os.path.exists(target_cache_folder):
         os.makedirs(target_cache_folder)
     for target_id in target_ids:
-        print(f'Building training dataset for {target_id}...')
         coraal_wav_paths = read_manifest(data_dir, dataset="coraal", speaker_id=target_id)
+        print(f'Building training dataset for {target_id}...')
         print(f'Found {len(coraal_wav_paths)} wav files')
         mel_normalized_B, mel_mean_B, mel_std_B = normalize_mel(coraal_wav_paths)
 
@@ -123,12 +123,12 @@ def buildTrainset(source_ids, target_ids, cache_folder='./cache/'):
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
 
-        # np.savez(os.path.join(cache_folder, 'norm_stat_coraal.npz'),
-        #     mean=mel_mean_B,
-        #     std=mel_std_B)
+        np.savez(os.path.join(save_dir, 'norm_stat_coraal.npz'),
+            mean=mel_mean_B,
+            std=mel_std_B)
         
-        # save_pickle(variable=mel_normalized_B,
-        #         fileName=os.path.join(cache_folder, "coraal_normalized.pickle"))
+        save_pickle(variable=mel_normalized_B,
+                fileName=os.path.join(save_dir, "coraal_normalized.pickle"))
 
     print('training dataset constructed and saved!')
 

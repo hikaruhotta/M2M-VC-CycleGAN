@@ -56,7 +56,8 @@ class CycleGANTraining(object):
 
         self.validation_dataset = trainingDataset(datasetA=self.dataset_A,
                                                   datasetB=self.dataset_B,
-                                                  n_frames=args.num_frames_validation)
+                                                  n_frames=args.num_frames_validation,
+                                                  valid=True)
         self.validation_dataloader = torch.utils.data.DataLoader(dataset=self.validation_dataset,
                                                                  batch_size=1,
                                                                  shuffle=False,
@@ -211,7 +212,7 @@ class CycleGANTraining(object):
                 self.logger.end_iter()
                 # adjust learning rates
                 if self.logger.global_step > self.decay_after:
-                    identity_loss_lambda = 0
+                    self.identity_loss_lambda = 0
                     self.adjust_lr_rate(
                         self.generator_optimizer, name='generator')
                     self.adjust_lr_rate(
