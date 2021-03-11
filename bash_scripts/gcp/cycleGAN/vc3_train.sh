@@ -1,5 +1,5 @@
 python -W ignore::UserWarning -m cycleGAN_VC3.train \
-    --name cyclegan_vc3_vcc2018_VCC2SM3_to_VCC2TF1_no_TFAN_1 \
+    --name cyclegan_vc3_vcc2018_VCC2SM3_to_VCC2TF1_no_TFAN_4_discriminators \
     --save_dir /home/results/cycleGAN_VC3 \
     --num_epochs 6172 \
     --normalized_dataset_A_path /home/sofianzalouk/vcc_2018_melspec/dataset_A_normalized.pickle \

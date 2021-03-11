@@ -56,12 +56,8 @@ class CycleGANTraining(object):
 
         self.validation_dataset = trainingDataset(datasetA=self.dataset_A,
                                                   datasetB=self.dataset_B,
-<<<<<<< HEAD
                                                   n_frames=args.num_frames_validation,
                                                   valid=True)
-=======
-                                                  n_frames=args.num_frames_validation)
->>>>>>> b9c9a7ad0088668e7cb23626a030ea86692cba7a
         self.validation_dataloader = torch.utils.data.DataLoader(dataset=self.validation_dataset,
                                                                  batch_size=1,
                                                                  shuffle=False,
@@ -75,12 +71,16 @@ class CycleGANTraining(object):
         self.generator_B2A = Generator().to(self.device)
         self.discriminator_A = Discriminator().to(self.device)
         self.discriminator_B = Discriminator().to(self.device)
+        self.discriminator_A2 = Discriminator().to(self.device)
+        self.discriminator_B2 = Discriminator().to(self.device)
 
         # Optimizer
         g_params = list(self.generator_A2B.parameters()) + \
             list(self.generator_B2A.parameters())
         d_params = list(self.discriminator_A.parameters()) + \
-            list(self.discriminator_B.parameters())
+            list(self.discriminator_B.parameters()) + \
+            list(self.discriminator_A2.parameters()) + \
+            list(self.discriminator_B2.parameters())
 
         self.generator_optimizer = torch.optim.Adam(
             g_params, lr=self.generator_lr, betas=(0.5, 0.999))
@@ -93,10 +93,14 @@ class CycleGANTraining(object):
                 self.generator_A2B, "generator_A2B", None, self.generator_optimizer)
             self.saver.load_model(self.generator_B2A,
                                   "generator_B2A", None, None)
-            self.saver.load_model(
-                self.generator_A2B, "discriminator_A", None, self.discriminator_optimizer)
-            self.saver.load_model(self.generator_A2B,
+            self.saver.load_model(self.discriminator_A, 
+                                  "discriminator_A", None, self.discriminator_optimizer)
+            self.saver.load_model(self.discriminator_B,
                                   "discriminator_B", None, None)
+            self.saver.load_model(self.discriminator_A2, 
+                                  "discriminator_A2", None, None)
+            self.saver.load_model(self.discriminator_B2,
+                                  "discriminator_B2", None, None)
 
     def adjust_lr_rate(self, optimizer, name='generator'):
         if name == 'generator':
@@ -140,6 +144,10 @@ class CycleGANTraining(object):
                 d_fake_A = self.discriminator_A(fake_A)
                 d_fake_B = self.discriminator_B(fake_B)
 
+                # for the second step adverserial loss
+                d_fake_cycle_A = self.discriminator_A2(cycle_A)
+                d_fake_cycle_B = self.discriminator_B2(cycle_B)
+
                 # Generator Cycle Loss
                 cycleLoss = torch.mean(
                     torch.abs(real_A - cycle_A)) + torch.mean(torch.abs(real_B - cycle_B))
@@ -152,8 +160,13 @@ class CycleGANTraining(object):
                 g_loss_A2B = torch.mean((1 - d_fake_B) ** 2)
                 g_loss_B2A = torch.mean((1 - d_fake_A) ** 2)
 
+                # Generator second step adverserial loss
+                generator_loss_A2B_2nd = torch.mean((1 - d_fake_cycle_B) ** 2)
+                generator_loss_B2A_2nd = torch.mean((1 - d_fake_cycle_A) ** 2)
+
                 # Total Generator Loss
                 g_loss = g_loss_A2B + g_loss_B2A + \
+                    generator_loss_A2B_2nd + generator_loss_B2A_2nd + \
                     self.cycle_loss_lambda * cycleLoss + self.identity_loss_lambda * identityLoss
                 # self.generator_loss_store.append(generator_loss.item())
 
@@ -168,19 +181,22 @@ class CycleGANTraining(object):
                 d_real_A = self.discriminator_A(real_A)
                 d_real_B = self.discriminator_B(real_B)
 
+                d_real_A2 = self.discriminator_A2(real_A)
+                d_real_B2 = self.discriminator_B2(real_B)
+
                 generated_A = self.generator_B2A(real_B)
                 d_fake_A = self.discriminator_A(generated_A)
 
                 # For Second Step Adverserial Loss A->B
                 cycled_B = self.generator_A2B(generated_A)
-                d_cycled_B = self.discriminator_B(cycled_B)
+                d_cycled_B = self.discriminator_B2(cycled_B)
 
                 generated_B = self.generator_A2B(real_A)
                 d_fake_B = self.discriminator_B(generated_B)
 
                 # For Second Step Adverserial Loss B->A
                 cycled_A = self.generator_B2A(generated_B)
-                d_cycled_A = self.discriminator_A(cycled_A)
+                d_cycled_A = self.discriminator_A2(cycled_A)
 
                 # Loss Functions
                 d_loss_A_real = torch.mean((1 - d_real_A) ** 2)
@@ -194,8 +210,10 @@ class CycleGANTraining(object):
                 # Second Step Adverserial Loss
                 d_loss_A_cycled = torch.mean((0 - d_cycled_A) ** 2)
                 d_loss_B_cycled = torch.mean((0 - d_cycled_B) ** 2)
-                d_loss_A_2nd = (d_loss_A_real + d_loss_A_cycled) / 2.0
-                d_loss_B_2nd = (d_loss_B_real + d_loss_B_cycled) / 2.0
+                d_loss_A2_real = torch.mean((1 - d_real_A2) ** 2)
+                d_loss_B2_real = torch.mean((1 - d_real_B2) ** 2)
+                d_loss_A_2nd = (d_loss_A2_real + d_loss_A_cycled) / 2.0
+                d_loss_B_2nd = (d_loss_B2_real + d_loss_B_cycled) / 2.0
 
                 # Final Loss for discriminator with the second step adverserial loss
                 d_loss = (d_loss_A + d_loss_B) / 2.0 + \
@@ -216,11 +234,7 @@ class CycleGANTraining(object):
                 self.logger.end_iter()
                 # adjust learning rates
                 if self.logger.global_step > self.decay_after:
-<<<<<<< HEAD
                     self.identity_loss_lambda = 0
-=======
-                    identity_loss_lambda = 0
->>>>>>> b9c9a7ad0088668e7cb23626a030ea86692cba7a
                     self.adjust_lr_rate(
                         self.generator_optimizer, name='generator')
                     self.adjust_lr_rate(
