@@ -60,10 +60,6 @@ def main(args):
         args.n_class, args.n_feats, args.stride, args.dropout
     ).to(args.device)
 
-    if torch.cuda.device_count() > 1:
-        print(f"Using {torch.cuda.device_count()} GPUs!")
-        model = nn.DataParallel(model)
-
     print('Num Model Parameters', sum(
         [param.nelement() for param in model.parameters()]))
 
@@ -86,14 +82,18 @@ def main(args):
         saver.load_model(model, "SpeechRecognitionModel",
                          args.pretrained_ckpt_path, None, None)
 
+    if torch.cuda.device_count() > 1:
+        print(f"Using {torch.cuda.device_count()} GPUs!")
+        model = nn.DataParallel(model)
+
     logger = TrainLogger(args, len(train_loader.dataset))
     logger.log_hparams(args)
 
     for epoch in range(args.start_epoch, args.num_epochs + 1):
         train(args, model, train_loader, criterion,
               optimizer, scheduler, logger)
-        metric_dict = test(args, model, valid_loader, criterion, logger)
         if logger.epoch % args.epochs_per_save == 0:
+            metric_dict = test(args, model, valid_loader, criterion, logger)
             saver.save(logger.epoch, model, optimizer, scheduler, args.device,
                        "SpeechRecognitionModel", metric_dict["test_wer"])
         logger.end_epoch()
