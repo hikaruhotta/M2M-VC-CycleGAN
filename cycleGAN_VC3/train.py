@@ -51,7 +51,8 @@ class CycleGANTraining(object):
         self.num_frames = args.num_frames
         self.dataset = trainingDataset(datasetA=self.dataset_A,
                                        datasetB=self.dataset_B,
-                                       n_frames=args.num_frames)
+                                       n_frames=args.num_frames,
+                                       max_mask_len=args.max_mask_len)
         self.train_dataloader = torch.utils.data.DataLoader(dataset=self.dataset,
                                                             batch_size=self.mini_batch_size,
                                                             shuffle=True,
@@ -60,6 +61,7 @@ class CycleGANTraining(object):
         self.validation_dataset = trainingDataset(datasetA=self.dataset_A,
                                                   datasetB=self.dataset_B,
                                                   n_frames=args.num_frames_validation,
+                                                  max_mask_len=args.max_mask_len,
                                                   valid=True)
         self.validation_dataloader = torch.utils.data.DataLoader(dataset=self.validation_dataset,
                                                                  batch_size=1,
@@ -129,21 +131,23 @@ class CycleGANTraining(object):
         for epoch in range(self.start_epoch, self.num_epochs):
             self.logger.start_epoch()
 
-            for i, (real_A, real_B) in enumerate(tqdm(self.train_dataloader)):
+            for i, (real_A, mask_A, real_B, mask_B) in enumerate(tqdm(self.train_dataloader)):
                 self.logger.start_iter()
                 num_iterations = (
                     self.n_samples // self.mini_batch_size) * epoch + i
 
                 real_A = real_A.to(self.device, dtype=torch.float)
+                mask_A = mask_A.to(self.device, dtype=torch.float)
                 real_B = real_B.to(self.device, dtype=torch.float)
+                mask_B = mask_B.to(self.device, dtype=torch.float)
 
                 # Train Generator
-                fake_B = self.generator_A2B(real_A)
-                cycle_A = self.generator_B2A(fake_B)
-                fake_A = self.generator_B2A(real_B)
-                cycle_B = self.generator_A2B(fake_A)
-                identity_A = self.generator_B2A(real_A)
-                identity_B = self.generator_A2B(real_B)
+                fake_B = self.generator_A2B(real_A, mask_A)
+                cycle_A = self.generator_B2A(fake_B, torch.ones_like(fake_B))
+                fake_A = self.generator_B2A(real_B, mask_B)
+                cycle_B = self.generator_A2B(fake_A, torch.ones_like(fake_A))
+                identity_A = self.generator_B2A(real_A, torch.ones_like(real_A))
+                identity_B = self.generator_A2B(real_B, torch.ones_like(real_B))
                 d_fake_A = self.discriminator_A(fake_A)
                 d_fake_B = self.discriminator_B(fake_B)
 
@@ -187,18 +191,18 @@ class CycleGANTraining(object):
                 d_real_A2 = self.discriminator_A2(real_A)
                 d_real_B2 = self.discriminator_B2(real_B)
 
-                generated_A = self.generator_B2A(real_B)
+                generated_A = self.generator_B2A(real_B, mask_B)
                 d_fake_A = self.discriminator_A(generated_A)
 
                 # For Second Step Adverserial Loss A->B
-                cycled_B = self.generator_A2B(generated_A)
+                cycled_B = self.generator_A2B(generated_A, torch.ones_like(generated_A))
                 d_cycled_B = self.discriminator_B2(cycled_B)
 
-                generated_B = self.generator_A2B(real_A)
+                generated_B = self.generator_A2B(real_A, mask_A)
                 d_fake_B = self.discriminator_B(generated_B)
 
                 # For Second Step Adverserial Loss B->A
-                cycled_A = self.generator_B2A(generated_B)
+                cycled_A = self.generator_B2A(generated_B, torch.ones_like(generated_B))
                 d_cycled_A = self.discriminator_A2(cycled_A)
 
                 # Loss Functions
@@ -281,8 +285,8 @@ class CycleGANTraining(object):
                     self.device, dtype=torch.float)
                 real_mel_full_B = real_mel_full_B.to(
                     self.device, dtype=torch.float)
-                fake_mel_full_B = self.generator_A2B(real_mel_full_A)
-                fake_mel_full_A = self.generator_B2A(real_mel_full_B)
+                fake_mel_full_B = self.generator_A2B(real_mel_full_A, torch.ones_like(real_mel_full_A))
+                fake_mel_full_A = self.generator_B2A(real_mel_full_B, torch.ones_like(real_mel_full_B))
                 real_wav_full_A = decode_melspectrogram(self.vocoder, real_mel_full_A[0].detach(
                 ).cpu(), self.dataset_A_mean, self.dataset_A_std).cpu()
                 fake_wav_full_A = decode_melspectrogram(self.vocoder, fake_mel_full_A[0].detach(
