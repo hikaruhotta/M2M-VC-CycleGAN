@@ -12,7 +12,7 @@ import random
 
 class Dataset(data.Dataset):
 
-    def __init__(self, args, split='train', coraal=True, voc=False, return_pair=False):
+    def __init__(self, args, split='train', coraal=True, voc=False, converted=False, return_pair=False):
         """
         Args:
             args (Namespace): Program arguments
@@ -24,11 +24,13 @@ class Dataset(data.Dataset):
         self.split = split
         self.coraal = coraal
         self.voc = voc
+        self.converted = converted
         if self.split == 'val':
             self.coraal = True
             self.voc = False
+            self.converted = False
         self.return_pair = return_pair
-        self.datasets = ['coraal']*self.coraal + ['voc']*self.voc
+        self.datasets = ['coraal']*self.coraal + ['voc']*self.voc + ['converted']*self.converted
         self.base_dir = Path(args.data_dir)
         self.manifest_path = Path(args.manifest_path)
 
