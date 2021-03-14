@@ -10,3 +10,4 @@ python -W ignore::UserWarning -m asr.main \
     --n_feats 80 \
     --epochs_per_save 2 \
     --pretrained_ckpt_path ~/data/results/librispeech/ckpts/best.pth.tar \
+    --continue_train \

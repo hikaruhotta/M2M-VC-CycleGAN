@@ -24,8 +24,11 @@ class Dataset(data.Dataset):
         self.split = split
         self.coraal = coraal
         self.voc = voc
+        if self.split == 'val':
+            self.coraal = True
+            self.voc = False
         self.return_pair = return_pair
-        self.datasets = ['coraal']*coraal + ['voc']*voc
+        self.datasets = ['coraal']*self.coraal + ['voc']*self.voc
         self.base_dir = Path(args.data_dir)
         self.manifest_path = Path(args.manifest_path)
 

@@ -34,7 +34,7 @@ def main(args):
         valid_dataset = Dataset(args, "val", coraal=args.coraal,
                                 voc=args.voc, return_pair=args.return_pair)
 
-    print(f"Training set has {len(train_dataset)} samples. Validation set has {len(train_dataset)} samples.")
+    print(f"Training set has {len(train_dataset)} samples. Validation set has {len(valid_dataset)} samples.")
         # train_audio_transforms = get_audio_transforms('train')
         # valid_audio_transforms = get_audio_transforms('valid')
 
