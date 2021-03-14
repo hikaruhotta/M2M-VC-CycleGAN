@@ -37,5 +37,7 @@ class ASRTrainArgParser(TrainArgParser):
 
         self.parser.add_argument(
             '--pretrained_ckpt_path', type=str,
-            default="/home/ubuntu/data/results/librispeech_vanilla/ckpts/021_SpeechRecognitionModel.pth.tar",
+            default=None,
             help='Model pretrained on Librispeech.')
+        self.parser.add_argument('--librispeech', default=False, action='store_true',
+                                 help=('Train with libirspeech dataset.'))

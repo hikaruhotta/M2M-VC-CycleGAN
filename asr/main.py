@@ -20,16 +20,23 @@ from args.asr_train_arg_parser import ASRTrainArgParser
 from saver.model_saver import ModelSaver
 from dataset.dataset import Dataset
 
-def main(args, train_url="train-clean-100", valid_url="test-clean"):
-    train_dataset = Dataset(args, "train", coraal=args.coraal, voc=args.voc, return_pair=args.return_pair)
-    valid_dataset = Dataset(args, "val", coraal=args.coraal, voc=args.voc, return_pair=args.return_pair)
-    # train_dataset = torchaudio.datasets.LIBRISPEECH(
-    #     args.data_dir, url=train_url, download=True)
-    # valid_dataset = torchaudio.datasets.LIBRISPEECH(
-    #     args.data_dir, url=valid_url, download=True)
 
-    # train_audio_transforms = get_audio_transforms('train')
-    # valid_audio_transforms = get_audio_transforms('valid')
+def main(args):
+    if args.librispeech:
+        print("Loading Librispeech dataset!")
+        train_dataset = torchaudio.datasets.LIBRISPEECH(
+            args.data_dir, url="train-clean-360", download=True)
+        valid_dataset = torchaudio.datasets.LIBRISPEECH(
+            args.data_dir, url="test-clean", download=True)
+    else:
+        train_dataset = Dataset(args, "train", coraal=args.coraal,
+                                voc=args.voc, return_pair=args.return_pair)
+        valid_dataset = Dataset(args, "val", coraal=args.coraal,
+                                voc=args.voc, return_pair=args.return_pair)
+
+    print(f"Training set has {len(train_dataset)} samples. Validation set has {len(valid_dataset)} samples.")
+        # train_audio_transforms = get_audio_transforms('train')
+        # valid_audio_transforms = get_audio_transforms('valid')
 
     text_transform = TextTransform()
 
@@ -41,21 +48,17 @@ def main(args, train_url="train-clean-100", valid_url="test-clean"):
                                    num_workers=args.num_workers,
                                    pin_memory=True)
     valid_loader = data.DataLoader(dataset=valid_dataset,
-                                  batch_size=args.batch_size,
-                                  shuffle=False,
-                                  collate_fn=lambda x: data_processing(
-                                      x, "valid", text_transform),
-                                  num_workers=args.num_workers,
-                                  pin_memory=True)
+                                   batch_size=args.batch_size,
+                                   shuffle=False,
+                                   collate_fn=lambda x: data_processing(
+                                       x, "valid", text_transform),
+                                   num_workers=args.num_workers,
+                                   pin_memory=True)
 
     model = SpeechRecognitionModel(
         args.n_cnn_layers, args.n_rnn_layers, args.rnn_dim,
         args.n_class, args.n_feats, args.stride, args.dropout
     ).to(args.device)
-
-    if torch.cuda.device_count() > 1:
-        print(f"Using {torch.cuda.device_count()} GPUs!")
-        model = nn.DataParallel(model)
 
     print('Num Model Parameters', sum(
         [param.nelement() for param in model.parameters()]))
@@ -69,12 +72,19 @@ def main(args, train_url="train-clean-100", valid_url="test-clean"):
                                               anneal_strategy='linear')
     # scheduler = optim.lr_scheduler.ExponentialLR(optimizer, args.gamma)
 
-    saver = ModelSaver(args, max_ckpts=args.max_ckpts, metric_name="test_wer", maximize_metric=False)
+    saver = ModelSaver(args, max_ckpts=args.max_ckpts,
+                       metric_name="test_wer", maximize_metric=False)
 
     if args.continue_train:
-        saver.load_model(model, "SpeechRecognitionModel", args.ckpt_path, optimizer, scheduler)
+        saver.load_model(model, "SpeechRecognitionModel",
+                         args.ckpt_path, optimizer, scheduler)
     elif args.pretrained_ckpt_path:
-        saver.load_model(model, "SpeechRecognitionModel", args.pretrained_ckpt_path, None, None)
+        saver.load_model(model, "SpeechRecognitionModel",
+                         args.pretrained_ckpt_path, None, None)
+
+    if torch.cuda.device_count() > 1:
+        print(f"Using {torch.cuda.device_count()} GPUs!")
+        model = nn.DataParallel(model)
 
     logger = TrainLogger(args, len(train_loader.dataset))
     logger.log_hparams(args)
@@ -82,8 +92,8 @@ def main(args, train_url="train-clean-100", valid_url="test-clean"):
     for epoch in range(args.start_epoch, args.num_epochs + 1):
         train(args, model, train_loader, criterion,
               optimizer, scheduler, logger)
-        metric_dict = test(args, model, valid_loader, criterion, logger)
         if logger.epoch % args.epochs_per_save == 0:
+            metric_dict = test(args, model, valid_loader, criterion, logger)
             saver.save(logger.epoch, model, optimizer, scheduler, args.device,
                        "SpeechRecognitionModel", metric_dict["test_wer"])
         logger.end_epoch()
@@ -92,6 +102,4 @@ def main(args, train_url="train-clean-100", valid_url="test-clean"):
 if __name__ == "__main__":
     parser = ASRTrainArgParser()
     args = parser.parse_args()
-    # libri_train_set = "train-clean-100"
-    # libri_valid_set = "test-clean"
     main(args)
