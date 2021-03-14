@@ -21,8 +21,6 @@ class CycleGANTraining(object):
         self.generator_lr = args.generator_lr
         self.discriminator_lr = args.discriminator_lr
         self.decay_after = args.decay_after
-        self.generator_lr_decay = self.generator_lr / self.num_epochs
-        self.discriminator_lr_decay = self.discriminator_lr / self.num_epochs
         self.mini_batch_size = args.batch_size
         self.cycle_loss_lambda = args.cycle_loss_lambda
         self.identity_loss_lambda = args.identity_loss_lambda
@@ -45,6 +43,11 @@ class CycleGANTraining(object):
         self.dataset_B_std = dataset_B_norm_stats['std']
 
         self.n_samples = len(self.dataset_A)
+        print(f'n_samples = {self.n_samples}')
+        self.generator_lr_decay = self.generator_lr / float(self.num_epochs * (self.n_samples // self.mini_batch_size))
+        self.discriminator_lr_decay = self.discriminator_lr / float(self.num_epochs * (self.n_samples // self.mini_batch_size))
+        print(f'generator_lr_decay = {self.generator_lr_decay}')
+        print(f'discriminator_lr_decay = {self.discriminator_lr_decay}')
         self.num_frames = args.num_frames
         self.dataset = trainingDataset(datasetA=self.dataset_A,
                                        datasetB=self.dataset_B,
