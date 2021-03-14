@@ -1,5 +1,5 @@
 python -W ignore::UserWarning -m cycleGAN_VC3.train \
-    --name cyclegan_vc3_vcc2018_VCC2SM3_to_VCC2TF1_no_TFAN_4_discriminators_lr_fixed \
+    --name debug_mask_cyclegan_vc \
     --save_dir /home/results/cycleGAN_VC3 \
     --num_epochs 6172 \
     --normalized_dataset_A_path /home/sofianzalouk/vcc_2018_melspec/dataset_A_normalized.pickle \
@@ -9,5 +9,6 @@ python -W ignore::UserWarning -m cycleGAN_VC3.train \
     --epochs_per_save 250 \
     --epochs_per_plot 10 \
     --batch_size 1 \
-    --decay_after 10000
+    --decay_after 10000 \
+    --max_mask_len 25
     # --num_frames_validation 320

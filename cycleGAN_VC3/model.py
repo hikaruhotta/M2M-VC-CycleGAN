@@ -99,13 +99,13 @@ class Generator(nn.Module):
         Cx, Tx = input_shape
         self.flattened_channels = (Cx // 4) * residual_in_channels
         # 2D Conv Layer
-        self.conv1 = nn.Conv2d(in_channels=1,
+        self.conv1 = nn.Conv2d(in_channels=2,
                                out_channels=residual_in_channels // 2,
                                kernel_size=(5, 15),
                                stride=(1, 1),
                                padding=(2, 7))
 
-        self.conv1_gates = nn.Conv2d(in_channels=1,
+        self.conv1_gates = nn.Conv2d(in_channels=2,
                                      out_channels=residual_in_channels // 2,
                                      kernel_size=(5, 15),
                                      stride=1,
@@ -223,11 +223,12 @@ class Generator(nn.Module):
                                        GLU())
         return self.convLayer
 
-    def forward(self, x):
+    def forward(self, x, mask):
         # GLU
+        x = torch.stack((x*mask, mask),dim=1)
         # print("Generator forward input: ", x.shape)
-        x = x.unsqueeze(1)
-        # print("Generator forward input: ", input.shape)
+        # x = x.unsqueeze(1)
+        # print("Generator forward input: ", x.shape)
 
         conv1 = self.conv1(x) * torch.sigmoid(self.conv1_gates(x))
         # print("Generator forward conv1: ", conv1.shape)

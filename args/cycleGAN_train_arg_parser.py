@@ -50,5 +50,8 @@ class CycleGANTrainArgParser(TrainArgParser):
         self.parser.add_argument(
             '--num_frames_validation', type=int, default=320, help='Num frames per validation sample.'
         )
-        
+        self.parser.add_argument(
+            '--max_mask_len', type=int, default=25, help='Maximum length of mask for Mask-CycleGAN-VC.'
+        )
+
         self.parser.set_defaults(batch_size=1, num_epochs=50, decay_after=1e4, start_epoch=1, steps_per_print=100, num_frames=64)
