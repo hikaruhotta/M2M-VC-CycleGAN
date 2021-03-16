@@ -123,17 +123,20 @@ class TextTransform:
             # torchaudio.transforms.MelSpectrogram(
             #     sample_rate=sample_rate, n_mels=128),
 
-def get_audio_transforms(phase, sample_rate=22050):
+def get_audio_transforms(phase, spec, sample_rate=22050):
     audio_2_mel = Audio2Mel()
     audio_2_mel_transform = audio_2_mel.forward
     if phase == 'train':
-        transforms = torchvision.transforms.Compose([
-            torchvision.transforms.Lambda(lambd=lambda x: audio_2_mel(x)),
-            # torchaudio.transforms.MelSpectrogram(
-            #     sample_rate=sample_rate, n_mels=80),
+        transforms = []
+        if not spec:
+            transforms.append(torchvision.transforms.Lambda(lambd=lambda x: audio_2_mel(x)))
+
+        transforms += [
             torchaudio.transforms.FrequencyMasking(freq_mask_param=30),
             torchaudio.transforms.TimeMasking(time_mask_param=100)
-        ])
+        ]
+        transforms = torchvision.transforms.Compose(transforms)
+
     elif phase == 'valid':
         # transforms = torchaudio.transforms.MelSpectrogram(
         #     sample_rate=sample_rate, n_mels=128
@@ -149,10 +152,10 @@ def data_processing(data, phase, text_transform):
     input_lengths = []
     label_lengths = []
     # for (waveform, sample_rate, utterance, _, _, _) in data:
-    for (waveform, sample_rate, utterance, speaker_id, _, _) in data:
+    for (data, sample_rate, utterance, speaker_id, _, spec) in data:
         # audio_transforms = get_audio_transforms(phase, sample_rate)
-        audio_transforms = get_audio_transforms(phase)
-        spec = audio_transforms(waveform).squeeze(0).transpose(0, 1)
+        audio_transforms = get_audio_transforms(phase, spec)
+        spec = audio_transforms(data).squeeze(0).transpose(0, 1)
         spectrograms.append(spec)
         label = torch.Tensor(text_transform.text_to_int(utterance.lower()))
         labels.append(label)

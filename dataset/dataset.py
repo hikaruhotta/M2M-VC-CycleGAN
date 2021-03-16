@@ -9,10 +9,12 @@ import torch
 import torch.utils.data as data
 import torchaudio
 import random
+from asr.data import TextTransform, get_audio_transforms, data_processing
+
 
 class Dataset(data.Dataset):
 
-    def __init__(self, args, split='train', coraal=True, voc=False, converted=False, return_pair=False):
+    def __init__(self, args, split='train', return_pair=False):
         """
         Args:
             args (Namespace): Program arguments
@@ -22,13 +24,16 @@ class Dataset(data.Dataset):
             return_pair (bool): Return a pair of CORAAL and VOC samples (For training CycleGAN)
         """
         self.split = split
-        self.coraal = coraal
-        self.voc = voc
-        self.converted = converted
+        self.coraal = args.coraal
+        self.voc = args.voc
+        self.converted = args.converted
+        self.unconverted = args.unconverted
+        self.converted_source_ids = args.converted_source_ids
         if self.split == 'val':
             self.coraal = True
             self.voc = False
             self.converted = False
+            self.unconverted = True
         self.return_pair = return_pair
         self.datasets = ['coraal']*self.coraal + ['voc']*self.voc + ['converted']*self.converted
         self.base_dir = Path(args.data_dir)
@@ -40,6 +45,9 @@ class Dataset(data.Dataset):
             self.coraal_df, self.coraal_wav_paths, self.coraal_txt_paths, self.coraal_ground_truth_text, self.coraal_durations, self.coraal_speaker_ids = self._read_manifest(self.base_dir, dataset="coraal", speaker_id=args.target_id)
             self.voc_df, self.voc_wav_paths, self.voc_txt_paths, self.voc_ground_truth_text, self.voc_durations, self.voc_speaker_ids = self._read_manifest(self.base_dir, dataset="voc", speaker_id=args.source_id)
         else:
+            if self.converted or self.unconverted:
+                self.converted_dict = self._load_converted_spectrograms(self.converted_source_ids)
+            
             # Merge dataframes
             self.df = None
             if self.coraal:
@@ -47,11 +55,17 @@ class Dataset(data.Dataset):
                     self.df = pd.read_csv(self.manifest_path / "coraal_small_manifest.csv", sep=',')
                 else:
                     self.df = pd.read_csv(self.manifest_path / "coraal_manifest.csv", sep=',')
-            if self.voc:
-                self.df = pd.read_csv(self.manifest_path / "voc_manifest.csv", sep=',').append(self.df, ignore_index=True)
+            if self.voc or self.converted or self.unconverted:
+                # self.df = pd.read_csv(self.manifest_path / "voc_manifest.csv", sep=',').append(self.df, ignore_index=True)
+                voc_df = pd.read_csv(self.manifest_path / "voc_manifest.csv", sep=',')
+                if self.converted and not self.voc: # train on coraal + converted only
+                    voc_df = voc_df[voc_df['wav_file'].isin(self.converted_dict.keys())]
+                if self.unconverted:
+                    voc_df = voc_df[~voc_df['wav_file'].isin(self.converted_dict.keys())]
                 
-            self.df, self.wav_paths, self.txt_paths, self.ground_truth_text, self.durations, self.speaker_ids = self._read_manifest(self.base_dir, split=split, df=self.df)
+                self.df = self.df.append(voc_df, ignore_index=True)
 
+            self.df, self.wav_paths, self.txt_paths, self.ground_truth_text, self.durations, self.speaker_ids = self._read_manifest(self.base_dir, split=split, df=self.df)
 
 
         # self.genders = self.df['gender'].tolist()
@@ -104,6 +118,14 @@ class Dataset(data.Dataset):
 
         return df, wav_paths, txt_paths, ground_truth_text, durations, speaker_ids
 
+    def _load_converted_spectrograms(self, source_ids):
+        converted_data = {}
+        for source_id in source_ids:
+            file_path = os.path.join(self.data_dir, f"/converted/voc/{source_id}/voc_normalized.pickle")
+            loaded_dict = self.loadPickleFile(file_path)
+            converted_data.update(loaded_dict)
+        return converted_data
+
     def __getitem__(self, index):
         """
         Loads audio file and labels into a tuple based on index.
@@ -123,8 +145,13 @@ class Dataset(data.Dataset):
             items.append((waveform_B, sample_rate_B, self.voc_ground_truth_text[voc_index], self.voc_speaker_ids[voc_index], self.voc_durations[voc_index], None))
 
         else:
-            waveform, sample_rate = torchaudio.load(self.wav_paths[index])
-            items = [waveform, sample_rate, self.ground_truth_text[index], self.speaker_ids[index], self.durations[index], None]
+            spec = False
+            if self.converted and self.wav_paths[index] in self.converted_dict:
+                data, sample_rate = self.converted_dict[self.wav_paths[index]], 22050
+                spec = True
+            else:
+                data, sample_rate = torchaudio.load(self.wav_paths[index])
+            items = [data, sample_rate, self.ground_truth_text[index], self.speaker_ids[index], self.durations[index], spec]
         
         # Returns (waveform, sample_rate, ground_truth_text, speaker_ids, duration)
         return tuple(items)
@@ -141,17 +168,34 @@ class Dataset(data.Dataset):
             return len(self.df)
 
 if __name__ == '__main__':
-    from args.cycleGAN_train_arg_parser import CycleGANTrainArgParser
-    parser = CycleGANTrainArgParser()
-    args = parser.parse_args()
-    print(args)
-    ds = Dataset(args, split='train', coraal=True, voc=True, return_pair=True)
+    # from args.cycleGAN_train_arg_parser import CycleGANTrainArgParser
+    # parser = CycleGANTrainArgParser()
+    # args = parser.parse_args()
+    # print(args)
+    # ds = Dataset(args, split='train', coraal=True, voc=True, return_pair=True)
 
-    for item in ds:
-        if len(item) == 2:
-            item1, item2 = item
-            print(item1)
-            print(item2)
-        else:
-            print(item)
-        break
+    # for item in ds:
+    #     if len(item) == 2:
+    #         item1, item2 = item
+    #         print(item1)
+    #         print(item2)
+    #     else:
+    #         print(item)
+    #     break
+    from args.asr_train_arg_parser import ASRTrainArgParser
+    parser = ASRTrainArgParser()
+    args = parser.parse_args()
+    args.coraal = Trues
+    self.voc = False
+    self.converted = True
+    self.unconverted = False
+    ds = Dataset(args, split='train', coraal=True, voc=True, return_pair=True)
+    print(len(ds))
+    train_loader = data.DataLoader(dataset=train_dataset,
+                                   batch_size=args.batch_size,
+                                   shuffle=True,
+                                   collate_fn=lambda x: data_processing(
+                                       x, "train", text_transform),
+                                   num_workers=args.num_workers,
+                                   pin_memory=True)
+
