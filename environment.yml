@@ -191,4 +191,3 @@ dependencies:
     - testpath==0.4.4
     - webencodings==0.5.1
     - widgetsnbextension==3.5.1
-prefix: /home/ubuntu/anaconda3/envs/asr2
