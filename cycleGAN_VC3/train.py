@@ -311,6 +311,10 @@ class CycleGANTraining(object):
                                 self.discriminator_optimizer, None, args.device, "discriminator_A")
                 self.saver.save(self.logger.epoch, self.discriminator_B,
                                 self.discriminator_optimizer, None, args.device, "discriminator_B")
+                self.saver.save(self.logger.epoch, self.discriminator_A2,
+                                self.discriminator_optimizer, None, args.device, "discriminator_A2")
+                self.saver.save(self.logger.epoch, self.discriminator_B2,
+                                self.discriminator_optimizer, None, args.device, "discriminator_B2")
 
             self.logger.end_epoch()
 
