@@ -154,8 +154,10 @@ def data_processing(data, phase, text_transform):
     # for (waveform, sample_rate, utterance, _, _, _) in data:
     for (data, sample_rate, utterance, speaker_id, _, spec) in data:
         # audio_transforms = get_audio_transforms(phase, sample_rate)
+        # print("spec: ", spec, "data shape: ", data.shape, "data type: ", type(data))
         audio_transforms = get_audio_transforms(phase, spec)
-        spec = audio_transforms(data).squeeze(0).transpose(0, 1)
+        spec = audio_transforms(data)
+        spec = spec.squeeze(0).transpose(0, 1)
         spectrograms.append(spec)
         label = torch.Tensor(text_transform.text_to_int(utterance.lower()))
         labels.append(label)

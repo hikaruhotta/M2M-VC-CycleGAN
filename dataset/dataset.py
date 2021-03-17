@@ -30,6 +30,7 @@ class Dataset(data.Dataset):
         self.voc = args.voc
         self.converted = args.converted
         self.unconverted = args.unconverted
+        assert not (self.converted and self.unconverted), "Cannot set converted and unconverted args"
         self.converted_source_ids = args.converted_source_ids
         if self.split == 'val':
             self.coraal = True
@@ -37,19 +38,19 @@ class Dataset(data.Dataset):
             self.converted = False
             self.unconverted = False
         self.return_pair = return_pair
-        self.datasets = ['coraal']*self.coraal + ['voc']*self.voc + ['converted']*self.converted
+        # self.datasets = ['coraal']*self.coraal + ['voc']*self.voc + ['converted']*self.converted
         self.base_dir = Path(args.data_dir)
         self.manifest_path = Path(args.manifest_path)
 
         # Sanity check: return_pair is only valid if using both datasets
         if self.return_pair:
             assert self.coraal and self.voc
-            self.coraal_df, self.coraal_wav_paths, self.coraal_txt_paths, self.coraal_ground_truth_text, self.coraal_durations, self.coraal_speaker_ids = self._read_manifest(self.base_dir, dataset="coraal", speaker_id=args.target_id)
-            self.voc_df, self.voc_wav_paths, self.voc_txt_paths, self.voc_ground_truth_text, self.voc_durations, self.voc_speaker_ids = self._read_manifest(self.base_dir, dataset="voc", speaker_id=args.source_id)
+            self.coraal_df, self.coraal_wav_paths, self.coraal_txt_paths, self.coraal_ground_truth_text, self.coraal_durations, self.coraal_speaker_ids, _ = self._read_manifest(self.base_dir, dataset="coraal", speaker_id=args.target_id)
+            self.voc_df, self.voc_wav_paths, self.voc_txt_paths, self.voc_ground_truth_text, self.voc_durations, self.voc_speaker_ids, _ = self._read_manifest(self.base_dir, dataset="voc", speaker_id=args.source_id)
         else:
             if self.converted or self.unconverted:
                 self.converted_dict = self._load_converted_spectrograms(self.converted_source_ids)
-            
+                print("Generated Converted Dict.")
             # Merge dataframes
             self.df = None
             if self.coraal:
@@ -69,7 +70,7 @@ class Dataset(data.Dataset):
                 else:
                     self.df = self.df.append(voc_df, ignore_index=True)
 
-            self.df, self.wav_paths, self.txt_paths, self.ground_truth_text, self.durations, self.speaker_ids = self._read_manifest(self.base_dir, split=split, df=self.df)
+            self.df, self.wav_paths, self.txt_paths, self.ground_truth_text, self.durations, self.speaker_ids, self.wav_names = self._read_manifest(self.base_dir, split=split, df=self.df)
 
 
         # self.genders = self.df['gender'].tolist()
@@ -123,13 +124,13 @@ class Dataset(data.Dataset):
         durations = df['duration'].tolist()
         speaker_ids = df['speaker_id'].tolist()
 
-        return df, wav_paths, txt_paths, ground_truth_text, durations, speaker_ids
+        return df, wav_paths, txt_paths, ground_truth_text, durations, speaker_ids, wav_files
 
     def _load_converted_spectrograms(self, source_ids):
         converted_data = {}
         for source_id in source_ids:
             # file_path = os.path.join(self.data_dir, f"/converted/voc/{source_id}/voc_normalized.pickle")
-            file_path = f"/home/ubuntu/results/cycleGAN_VC3/converted/pickle_files/voc_converted_{source_id}.pickle"
+            file_path = f"/home/ubuntu/data/converted/voc_converted_{source_id}.pickle"
             loaded_dict = self.loadPickleFile(file_path)
             converted_data.update(loaded_dict)
         return converted_data
@@ -154,14 +155,20 @@ class Dataset(data.Dataset):
 
         else:
             spec = False
-            if self.converted and self.wav_paths[index] in self.converted_dict:
-                data, sample_rate = self.converted_dict[self.wav_paths[index]], 22050
+            if self.converted and (self.wav_names[index] in self.converted_dict):
+                # print(f"Getting converted numpy array for wav file: {self.wav_names[index]}")
+                data, sample_rate = self.converted_dict[self.wav_names[index]], 22050
+                data = torch.tensor(data)
                 spec = True
             else:
                 data, sample_rate = torchaudio.load(self.wav_paths[index])
             items = [data, sample_rate, self.ground_truth_text[index], self.speaker_ids[index], self.durations[index], spec]
         
-        # Returns (waveform, sample_rate, ground_truth_text, speaker_ids, duration)
+            if self.speaker_ids[index] in self.converted_source_ids and self.converted:
+                assert spec
+            if self.speaker_ids[index] in self.converted_source_ids and self.unconverted:
+                assert not spec
+        # Returns (data, sample_rate, ground_truth_text, speaker_ids, duration, spec)
         return tuple(items)
 
     def __len__(self):

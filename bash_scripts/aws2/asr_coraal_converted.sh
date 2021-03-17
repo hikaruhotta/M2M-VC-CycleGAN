@@ -1,4 +1,4 @@
-# Librispeech + finetuned on CoRAAL + voice converted 7 voc speakerss
+# Librispeech + finetuned on CoRAAL + voice converted 7 voc speakers
 
 python -W ignore::UserWarning -m asr.main \
     --name asr_coraal_converted \
@@ -12,5 +12,4 @@ python -W ignore::UserWarning -m asr.main \
     --num_workers 1 \
     --n_feats 80 \
     --epochs_per_save 5 \
-    --pretrained_ckpt_path ~/data/results/librispeech/ckpts/best.pth.tar \
-    --continue_train \
+    --pretrained_ckpt_path ~/results/librispeech/ckpts/best.pth.tar \
