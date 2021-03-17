@@ -60,10 +60,10 @@ class Dataset(data.Dataset):
             if self.voc or self.converted or self.unconverted:
                 # self.df = pd.read_csv(self.manifest_path / "voc_manifest.csv", sep=',').append(self.df, ignore_index=True)
                 voc_df = pd.read_csv(self.manifest_path / "voc_manifest.csv", sep=',')
-                if self.converted and not self.voc: # train on coraal + converted only
+                if (self.converted or self.unconverted) and not self.voc: # train on coraal + converted only
                     voc_df = voc_df[voc_df['wav_file'].isin(self.converted_dict.keys())]
-                if self.unconverted:
-                    voc_df = voc_df[~voc_df['wav_file'].isin(self.converted_dict.keys())]
+                # if self.unconverted and:
+                #     voc_df = voc_df[~voc_df['wav_file'].isin(self.converted_dict.keys())]
                 if self.df is None:
                     self.df = voc_df
                 else:
@@ -128,7 +128,8 @@ class Dataset(data.Dataset):
     def _load_converted_spectrograms(self, source_ids):
         converted_data = {}
         for source_id in source_ids:
-            file_path = os.path.join(self.data_dir, f"/converted/voc/{source_id}/voc_normalized.pickle")
+            # file_path = os.path.join(self.data_dir, f"/converted/voc/{source_id}/voc_normalized.pickle")
+            file_path = f"/home/ubuntu/results/cycleGAN_VC3/converted/pickle_files/voc_converted_{source_id}.pickle"
             loaded_dict = self.loadPickleFile(file_path)
             converted_data.update(loaded_dict)
         return converted_data

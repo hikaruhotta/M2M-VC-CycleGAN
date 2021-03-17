@@ -1,3 +1,5 @@
+# Librispeech + finetuned on CoRAAL + voice converted 7 voc speakerss
+
 python -W ignore::UserWarning -m asr.main \
     --name asr_coraal_converted \
     --data_dir ~/data \
