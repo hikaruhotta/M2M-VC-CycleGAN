@@ -76,7 +76,6 @@ class trainingDataset(Dataset):
     def __len__(self):
         return min(len(self.datasetA), len(self.datasetB))
 
-
 # if __name__ == '__main__':
 #     trainA = np.random.randn(162, 24, 554)
 #     trainB = np.random.randn(158, 24, 554)
