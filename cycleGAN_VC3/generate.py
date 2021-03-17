@@ -26,21 +26,20 @@ class CycleGANGenerate(object):
         self.data_dir = args.data_dir
         self.source_id = args.source_id
         self.save_dir = args.save_dir
-
-        voc_wav_files = self.read_manifest(dataset="voc", speaker_id=self.source_id)
-        print(f'Found {len(voc_wav_files)} wav files')
-        self.dataset_A, self.dataset_A_mean, self.dataset_A_std = self.normalize_mel(voc_wav_files, self.data_dir, sr=self.sample_rate)
-        self.n_samples = len(self.dataset_A)
-        print(f'n_samples = {self.n_samples}')
-
         self.saver = ModelSaver(args)
 
         # Generator
         self.generator_A2B = Generator().to(self.device)
 
         # Load from previous ckpt
-        self.saver.load_model(self.generator_A2B,
-                                "generator_A2B", None, None)
+        self.saver.load_model(self.generator_A2B, "generator_A2B",
+                              args.ckpt_path, None, None)
+
+        voc_wav_files = self.read_manifest(dataset="voc", speaker_id=self.source_id)
+        print(f'Found {len(voc_wav_files)} wav files')
+        self.dataset_A, self.dataset_A_mean, self.dataset_A_std = self.normalize_mel(voc_wav_files, self.data_dir, sr=self.sample_rate)
+        self.n_samples = len(self.dataset_A)
+        print(f'n_samples = {self.n_samples}')
 
     def read_manifest(self, split=None, dataset=None, speaker_id=None):
         # Load manifest file which defines dataset
@@ -76,7 +75,7 @@ class CycleGANGenerate(object):
 
         return mel_normalized, mel_mean, mel_std
     
-    def save_pickle(variable, fileName):
+    def save_pickle(self, variable, fileName):
         with open(fileName, 'wb') as f:
             pickle.dump(variable, f)
 
@@ -84,15 +83,14 @@ class CycleGANGenerate(object):
         
         converted_specs = dict()
         for i, (wavpath, melspec) in enumerate(tqdm(self.dataset_A.items())):
-            real_A = torch.tensor(melspec).to(self.device, dtype=torch.float)
-            fake_B_normalized = self.generator_A2B(real_A, mask_A)
-
+            real_A = torch.tensor(melspec).unsqueeze(0).to(self.device, dtype=torch.float)
+            fake_B_normalized = self.generator_A2B(real_A, torch.ones_like(real_A)).squeeze(0).detach().cpu().numpy()
             fake_B = fake_B_normalized * self.dataset_A_std + self.dataset_A_mean
             converted_specs[wavpath] = fake_B
         
-        print(f"Saving to voc_converted_{self.source_id}.pickle")
-        # save_pickle(variable=converted_specs,
-        #         fileName=os.path.join(self.save_dir, f"voc_converted_{self.source_id}.pickle"))
+        print(f"Saving to ~/data/converted/voc_converted_{self.source_id}.pickle")
+        self.save_pickle(variable=converted_specs,
+                fileName=os.path.join('/home/ubuntu/data', "converted", f"voc_converted_{self.source_id}.pickle"))
 
 
 if __name__ == "__main__":
