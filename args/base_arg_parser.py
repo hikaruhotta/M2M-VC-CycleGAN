@@ -61,7 +61,7 @@ class BaseArgParser(object):
         self.parser.add_argument('--unconverted', default=False, action='store_true',
                                  help=('Whether to train on voc speakers which were not converted using CycleGAN.'))
         self.parser.add_argument('--converted_source_ids', nargs='+',
-                                 default=['10', '13', '24', '18', '7', '0'], type=str, help='source ids of converted voc speakers.')
+                                 default=['18', '10', '7', '13', '26', '24', '0', '6'], type=str, help='source ids of converted voc speakers.')
         self.parser.add_argument('--return_pair', default=False, action='store_true',
                                  help=('Whether to return paired data. Used in CycleGAN training.')) 
 

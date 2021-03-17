@@ -29,10 +29,8 @@ def main(args):
         valid_dataset = torchaudio.datasets.LIBRISPEECH(
             args.data_dir, url="test-clean", download=True)
     else:
-        train_dataset = Dataset(args, "train", coraal=args.coraal,
-                                voc=args.voc, return_pair=args.return_pair)
-        valid_dataset = Dataset(args, "val", coraal=args.coraal,
-                                voc=args.voc, return_pair=args.return_pair)
+        train_dataset = Dataset(args, "train", return_pair=args.return_pair)
+        valid_dataset = Dataset(args, "val", return_pair=args.return_pair)
 
     print(f"Training set has {len(train_dataset)} samples. Validation set has {len(valid_dataset)} samples.")
         # train_audio_transforms = get_audio_transforms('train')

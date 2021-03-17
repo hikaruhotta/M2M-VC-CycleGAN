@@ -1,7 +1,7 @@
 python -W ignore::UserWarning -m asr.main \
     --name asr_coraal_voc29_converted \
-    --data_dir ~/data/datasets \
-    --save_dir ~/data/results \
+    --data_dir ~/data \
+    --save_dir ~/results \
     --coraal \
     --voc \
     --converted \

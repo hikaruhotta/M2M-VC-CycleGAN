@@ -1,9 +1,10 @@
 """
 Defines Dataset which is a wrapper for the torch.utils.data.Dataset class.
 """
-
+import os
 import pandas as pd
 from pathlib import Path
+import pickle
 
 import torch
 import torch.utils.data as data
@@ -24,6 +25,7 @@ class Dataset(data.Dataset):
             return_pair (bool): Return a pair of CORAAL and VOC samples (For training CycleGAN)
         """
         self.split = split
+        self.data_dir = args.data_dir
         self.coraal = args.coraal
         self.voc = args.voc
         self.converted = args.converted
@@ -33,7 +35,7 @@ class Dataset(data.Dataset):
             self.coraal = True
             self.voc = False
             self.converted = False
-            self.unconverted = True
+            self.unconverted = False
         self.return_pair = return_pair
         self.datasets = ['coraal']*self.coraal + ['voc']*self.voc + ['converted']*self.converted
         self.base_dir = Path(args.data_dir)
@@ -62,8 +64,10 @@ class Dataset(data.Dataset):
                     voc_df = voc_df[voc_df['wav_file'].isin(self.converted_dict.keys())]
                 if self.unconverted:
                     voc_df = voc_df[~voc_df['wav_file'].isin(self.converted_dict.keys())]
-                
-                self.df = self.df.append(voc_df, ignore_index=True)
+                if self.df is None:
+                    self.df = voc_df
+                else:
+                    self.df = self.df.append(voc_df, ignore_index=True)
 
             self.df, self.wav_paths, self.txt_paths, self.ground_truth_text, self.durations, self.speaker_ids = self._read_manifest(self.base_dir, split=split, df=self.df)
 
@@ -87,6 +91,9 @@ class Dataset(data.Dataset):
         # characters.sort()
         # print(characters)
 
+    def loadPickleFile(self, fileName):
+        with open(fileName, 'rb') as f:
+            return pickle.load(f)
 
     def _read_manifest(self, data_dir, split=None, dataset=None, df=None, speaker_id=None):
 
