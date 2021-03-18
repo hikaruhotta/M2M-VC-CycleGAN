@@ -30,6 +30,7 @@ class Dataset(data.Dataset):
         self.voc = args.voc
         self.converted = args.converted
         self.unconverted = args.unconverted
+        self.append = args.append
         assert not (self.converted and self.unconverted), "Cannot set converted and unconverted args"
         self.converted_source_ids = args.converted_source_ids
         if self.split == 'val':
@@ -37,6 +38,7 @@ class Dataset(data.Dataset):
             self.voc = False
             self.converted = False
             self.unconverted = False
+            self.append = False
         self.return_pair = return_pair
         # self.datasets = ['coraal']*self.coraal + ['voc']*self.voc + ['converted']*self.converted
         self.base_dir = Path(args.data_dir)
@@ -48,7 +50,7 @@ class Dataset(data.Dataset):
             self.coraal_df, self.coraal_wav_paths, self.coraal_txt_paths, self.coraal_ground_truth_text, self.coraal_durations, self.coraal_speaker_ids, _ = self._read_manifest(self.base_dir, dataset="coraal", speaker_id=args.target_id)
             self.voc_df, self.voc_wav_paths, self.voc_txt_paths, self.voc_ground_truth_text, self.voc_durations, self.voc_speaker_ids, _ = self._read_manifest(self.base_dir, dataset="voc", speaker_id=args.source_id)
         else:
-            if self.converted or self.unconverted:
+            if self.converted or self.unconverted or self.append:
                 self.converted_dict = self._load_converted_spectrograms(self.converted_source_ids)
                 print("Generated Converted Dict.")
             # Merge dataframes
@@ -63,8 +65,9 @@ class Dataset(data.Dataset):
                 voc_df = pd.read_csv(self.manifest_path / "voc_manifest.csv", sep=',')
                 if (self.converted or self.unconverted) and not self.voc: # train on coraal + converted only
                     voc_df = voc_df[voc_df['wav_file'].isin(self.converted_dict.keys())]
-                # if self.unconverted and:
-                #     voc_df = voc_df[~voc_df['wav_file'].isin(self.converted_dict.keys())]
+                elif self.append:
+                    filtered = voc_df[voc_df['wav_file'].isin(self.converted_dict.keys())]
+                    voc_df = voc_df.append(filtered, ignore_index=True)
                 if self.df is None:
                     self.df = voc_df
                 else:
@@ -155,8 +158,7 @@ class Dataset(data.Dataset):
 
         else:
             spec = False
-            if self.converted and (self.wav_names[index] in self.converted_dict):
-                # print(f"Getting converted numpy array for wav file: {self.wav_names[index]}")
+            if (self.wav_names[index] in self.converted_dict) and (self.converted or (self.append and random.random() < 0.5)):
                 data, sample_rate = self.converted_dict[self.wav_names[index]], 22050
                 data = torch.tensor(data)
                 spec = True
